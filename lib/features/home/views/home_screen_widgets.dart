@@ -257,45 +257,82 @@ class InvitationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      height: 120,
-      child: Stack(
-        children: [
-          CustomPaint(
-            size: Size(MediaQuery.of(context).size.width - 32, 120),
-            painter: EnvelopePainter(),
-          ),
-          CustomPaint(
-            size: Size(MediaQuery.of(context).size.width - 32, 50),
-            painter: EnvelopeFlapPainter(),
-          ),
-          Positioned(
-            left: 20,
-            bottom: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  invitation.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.black,
+      elevation: 0, // 그림자를 없애고
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade300, width: 1), // 얇은 테두리 추가
+      ),
+      color: Colors.grey.shade50, // 편지봉투 느낌의 아주 연한 회색 배경
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Row(
+          children: [
+            // 모험 초대장 느낌을 살리는 편지 아이콘
+            const Icon(Icons.mail_outline, color: Color(0xFFD6706D), size: 32),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    invitation.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 5),
-                if (invitation.isRegular)
-                  const Text(
-                    '정기 모임',
-                    style: TextStyle(color: Colors.blue, fontSize: 10),
+                  const SizedBox(height: 6),
+                  Text(
+                    invitation.description,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            // 정기 모임 또는 새로운 초대장 태그
+            if (invitation.isRegular)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '정기 모임',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            else if (invitation.isNew)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD6706D).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'NEW',
+                  style: TextStyle(
+                    color: Color(0xFFD6706D),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

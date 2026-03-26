@@ -31,24 +31,19 @@ class _HomeScreenContent extends StatelessWidget {
 
     return Scaffold(
       appBar: CustomAppBar(),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                UserProfileCard(user: user),
-                const SizedBox(height: 20),
-                InvitationSection(
-                  invitations: viewModel.invitations,
-                  selectedTabIndex: viewModel.selectedTabIndex,
-                ),
-                const SizedBox(height: 100),
-              ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UserProfileCard(user: user),
+            const SizedBox(height: 20),
+            InvitationSection(
+              invitations: viewModel.invitations,
+              selectedTabIndex: viewModel.selectedTabIndex,
             ),
-          ),
-          const BottomActionArea(),
-        ],
+            const SizedBox(height: 40), // 하단 여백을 100에서 40으로 줄임
+          ],
+        ),
       ),
     );
   }
