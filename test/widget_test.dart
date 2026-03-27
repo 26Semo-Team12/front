@@ -11,20 +11,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:front/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('앱이 정상적으로 시작됨', (WidgetTester tester) async {
+    await tester.pumpWidget(const VentureApp());
+    // pump once without settling to avoid waiting for network images
     await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Drain any image-load exceptions (network returns 400 in test env)
+    tester.takeException();
+    // 앱이 오류 없이 렌더링되는지 확인
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

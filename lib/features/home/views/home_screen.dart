@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/services/mock_api_service.dart';
 import '../viewmodels/home_view_model.dart';
 import 'home_screen_widgets.dart'; // 같은 폴더 내의 위젯 파일
 
@@ -11,7 +12,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => HomeViewModel(),
+      create: (_) => HomeViewModel(MockApiService())..init(),
       child: const _HomeScreenContent(),
     );
   }
@@ -37,10 +38,7 @@ class _HomeScreenContent extends StatelessWidget {
           children: [
             UserProfileCard(user: user),
             const SizedBox(height: 20),
-            InvitationSection(
-              invitations: viewModel.invitations,
-              selectedTabIndex: viewModel.selectedTabIndex,
-            ),
+            const InvitationSection(),
             const SizedBox(height: 40), // 하단 여백을 100에서 40으로 줄임
           ],
         ),
