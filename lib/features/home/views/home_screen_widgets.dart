@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'in_app_map_screen.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
 import '../models/invitation.dart';
@@ -154,7 +155,8 @@ class UserProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<HomeViewModel>(context);
+    // context.read: 구독 없이 한 번만 읽음 → 필터 변경 시 이 위젯 리빌드 없음
+    final viewModel = context.read<HomeViewModel>();
     const cardColor = Color(0xFFD6706D);
 
     return Container(
@@ -763,49 +765,76 @@ class FilterButton extends StatelessWidget {
   }
 }
 
+// ─── InvitationSection (기존 호환용 — 사용 안 함) ───────────────────────────
+// home_screen.dart에서 InvitationFilterRow + InvitationListOnly로 분리 사용
+
+// ─── InvitationFilterRow ─────────────────────────────────────────────────────
+class InvitationFilterRow extends StatelessWidget {
+  const InvitationFilterRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // activeFilters Set만 구독 — UserProfile 변경 시 리빌드 없음
+    final filters = context.select<HomeViewModel, Set<InvitationType>>(
+      (vm) => vm.activeFilters,
+    );
+    final viewModel = context.read<HomeViewModel>();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          FilterButton(
+            label: '새 초대장',
+            type: InvitationType.newInvitation,
+            isSelected: filters.contains(InvitationType.newInvitation),
+            onTap: () => viewModel.toggleFilter(InvitationType.newInvitation),
+          ),
+          const SizedBox(width: 8),
+          FilterButton(
+            label: '장기 모임',
+            type: InvitationType.longTerm,
+            isSelected: filters.contains(InvitationType.longTerm),
+            onTap: () => viewModel.toggleFilter(InvitationType.longTerm),
+          ),
+          const SizedBox(width: 8),
+          FilterButton(
+            label: '만료된 초대장',
+            type: InvitationType.expired,
+            isSelected: filters.contains(InvitationType.expired),
+            onTap: () => viewModel.toggleFilter(InvitationType.expired),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── InvitationListOnly ──────────────────────────────────────────────────────
+class InvitationListOnly extends StatelessWidget {
+  const InvitationListOnly({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // filteredInvitations만 구독 — UserProfile 변경 시 리빌드 없음
+    final invitations = context.select<HomeViewModel, List<Invitation>>(
+      (vm) => vm.filteredInvitations,
+    );
+    return _AnimatedInvitationList(invitations: invitations);
+  }
+}
+
 // ─── InvitationSection (멀티 셀렉트 + 페이드 애니메이션) ─────────────────────
 class InvitationSection extends StatelessWidget {
   const InvitationSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<HomeViewModel>(context);
-    final filters = viewModel.activeFilters;
-    final invitations = viewModel.filteredInvitations;
-
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              FilterButton(
-                label: '새 초대장',
-                type: InvitationType.newInvitation,
-                isSelected: filters.contains(InvitationType.newInvitation),
-                onTap: () => viewModel.toggleFilter(InvitationType.newInvitation),
-              ),
-              const SizedBox(width: 8),
-              FilterButton(
-                label: '장기 모임',
-                type: InvitationType.longTerm,
-                isSelected: filters.contains(InvitationType.longTerm),
-                onTap: () => viewModel.toggleFilter(InvitationType.longTerm),
-              ),
-              const SizedBox(width: 8),
-              FilterButton(
-                label: '만료된 초대장',
-                type: InvitationType.expired,
-                isSelected: filters.contains(InvitationType.expired),
-                onTap: () => viewModel.toggleFilter(InvitationType.expired),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        // AnimatedList 대신 각 카드에 AnimatedOpacity + AnimatedSize 적용
-        _AnimatedInvitationList(invitations: invitations),
+        InvitationFilterRow(),
+        SizedBox(height: 10),
+        InvitationListOnly(),
       ],
     );
   }
@@ -872,7 +901,6 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _opacity;
-  late final Animation<double> _size;
 
   @override
   void initState() {
@@ -883,7 +911,6 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
       value: widget.visible ? 1.0 : 0.0,
     );
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-    _size = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
   }
 
   @override
@@ -902,10 +929,19 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
 
   @override
   Widget build(BuildContext context) {
-    return SizeTransition(
-      sizeFactor: _size,
-      axisAlignment: -1,
-      child: FadeTransition(opacity: _opacity, child: widget.child),
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, child) {
+        // 높이를 0→full로 클리핑. 스크롤 위치에 영향 없음.
+        return ClipRect(
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: _ctrl.value,
+            child: Opacity(opacity: _opacity.value, child: child),
+          ),
+        );
+      },
+      child: widget.child,
     );
   }
 }
@@ -1069,6 +1105,12 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
+        // 지도 버튼 (디버그용)
+        Positioned(
+          top: 8,
+          left: 8,
+          child: _MapButton(location: inv.location),
+        ),
         // 하단 정보 (준비 중)
         Positioned(
           left: 0,
@@ -1108,3 +1150,29 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
 
 // ─── 하위 호환용 AddTagDialog alias ─────────────────────────────────────────
 typedef AddTagDialog = TagEditDialog;
+
+// ─── 지도 버튼 (앱 내 지도) ──────────────────────────────────────────────────
+class _MapButton extends StatelessWidget {
+  final String location;
+  const _MapButton({required this.location});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.map_outlined, color: Colors.white),
+        tooltip: '지도 열기',
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InAppMapScreen(locationName: location),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -110,6 +110,33 @@ class MockApiService {
         imageUrl: null,
         memberCount: 15,
       ),
+      Invitation(
+        id: 'inv-007',
+        type: InvitationType.newInvitation,
+        title: '주말 보드게임 모임',
+        dateTime: DateTime(2025, 9, 6, 14, 0),
+        location: '강남구 보드게임 카페',
+        imageUrl: 'https://picsum.photos/seed/boardgame/400/200',
+        memberCount: 6,
+      ),
+      Invitation(
+        id: 'inv-008',
+        type: InvitationType.longTerm,
+        title: '매월 첫째 주 독서 모임',
+        dateTime: DateTime(2025, 9, 7, 15, 0),
+        location: '마포구 공공도서관',
+        imageUrl: 'https://picsum.photos/seed/library/400/200',
+        memberCount: 9,
+      ),
+      Invitation(
+        id: 'inv-009',
+        type: InvitationType.newInvitation,
+        title: '한강 자전거 라이딩',
+        dateTime: DateTime(2025, 9, 13, 8, 0),
+        location: '여의도 한강공원',
+        imageUrl: 'https://picsum.photos/seed/cycling/400/200',
+        memberCount: 11,
+      ),
     ];
   }
 
