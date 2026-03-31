@@ -1,66 +1,129 @@
 // lib/features/home/viewmodels/home_view_model.dart
 
-import 'package:flutter/material.dart';
-import '../../../core/models/user_profile.dart'; // core에서 공통 모델 가져오기
-import '../models/invitation.dart'; // home 전용 모델 가져오기
+import 'package:flutter/foundation.dart';
+import '../../../core/models/user_profile.dart';
+import '../../../core/services/mock_api_service.dart';
+import '../models/invitation.dart';
+
+enum TagType { location, time, gender, ageRange, interest }
 
 class HomeViewModel extends ChangeNotifier {
+  final MockApiService _apiService;
   UserProfile? _currentUser;
   List<Invitation> _invitations = [];
-  int _selectedTabIndex = 1;
+  // 멀티 셀렉트 필터: 기본값 = 새 초대장 + 장기 모임 활성화
+  Set<InvitationType> _activeFilters = {
+    InvitationType.newInvitation,
+    InvitationType.longTerm,
+  };
+
+  Set<InvitationType> get activeFilters => Set.unmodifiable(_activeFilters);
   int _currentPageIndex = 0;
 
-  UserProfile? get currentUser => _currentUser;
-  List<Invitation> get invitations => _invitations;
-  int get selectedTabIndex => _selectedTabIndex;
-  int get currentPageIndex => _currentPageIndex;
+  HomeViewModel(this._apiService);
 
-  HomeViewModel() {
-    _fetchMockData();
+  InvitationType? get activeFilter => null; // 하위 호환용 (미사용)
+  int get currentPageIndex => _currentPageIndex;
+  UserProfile? get currentUser => _currentUser;
+
+  List<Invitation> get filteredInvitations {
+    final list = _invitations
+        .where((inv) => _activeFilters.contains(inv.type))
+        .toList();
+    list.sort((a, b) => a.type.index.compareTo(b.type.index));
+    return list;
   }
 
-  void _fetchMockData() {
-    _currentUser = UserProfile(
-      name: '방황하는 조르디123',
-      profileImageUrl:
-          'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YXZhdGFyfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60',
-      interests: ['배드민턴', '클라이밍', '밴드'],
-      ageRange: '20대',
-      gender: '여자',
-      rating: 4.5,
-    );
-
-    _invitations = [
-      Invitation(
-        title: '라켓은 랠리를 싫어해.',
-        description: '배드민턴 초보 대모임 (여의도)',
-        isNew: true,
-      ),
-      Invitation(
-        title: '수요 스릴러',
-        description: '스릴러 영화 정기 소모임 (용산)',
-        isNew: true,
-        isRegular: true,
-      ),
-      Invitation(title: '만료된 초대장 1', description: '지난 모임 1', isRegular: true),
-    ];
-
+  Future<void> init() async {
+    _currentUser = await _apiService.getMe();
+    _invitations = await _apiService.getInvitations();
     notifyListeners();
   }
 
-  void changeTab(int index) {
-    _selectedTabIndex = index;
+  void toggleFilter(InvitationType type) {
+    if (_activeFilters.contains(type)) {
+      _activeFilters.remove(type);
+    } else {
+      _activeFilters.add(type);
+    }
+    notifyListeners();
+  }
+
+  Future<void> updateProfile({String? name, String? profileImageUrl}) async {
+    if (name != null && name.trim().isEmpty) return;
+    _currentUser = await _apiService.patchMe(
+      name: (name != null && name.trim().isNotEmpty) ? name : null,
+      profileImageUrl: profileImageUrl,
+    );
+    notifyListeners();
+  }
+
+  void removeTag(String tagValue, TagType type) {
+    if (_currentUser == null) return;
+    switch (type) {
+      case TagType.location:
+        final updatedLocs = List<LocationModel>.from(_currentUser!.locations)
+          ..removeWhere((loc) => loc.displayLabel == tagValue);
+        _apiService.patchMe(locations: updatedLocs);
+        _currentUser = _currentUser!.copyWith(locations: updatedLocs);
+      case TagType.time:
+        final updatedTimes = List<TimeSlot>.from(_currentUser!.availableTimes)
+          ..removeWhere((slot) => slot.displayLabel == tagValue);
+        _apiService.patchMe(availableTimes: updatedTimes);
+        _currentUser = _currentUser!.copyWith(availableTimes: updatedTimes);
+      case TagType.interest:
+        final updated = List<String>.from(_currentUser!.interests)
+          ..remove(tagValue);
+        _apiService.patchMe(interests: updated);
+        _currentUser = _currentUser!.copyWith(interests: updated);
+      case TagType.ageRange:
+        _apiService.patchMe(ageRange: null);
+        _currentUser = _currentUser!.copyWith(ageRange: null);
+      case TagType.gender:
+        _apiService.patchMe(gender: null);
+        _currentUser = _currentUser!.copyWith(gender: null);
+    }
+    notifyListeners();
+  }
+
+  Future<void> addTag(String tagValue, TagType type) async {
+    if (tagValue.trim().isEmpty) return;
+    if (_currentUser == null) return;
+    switch (type) {
+      case TagType.location:
+        break;
+      case TagType.time:
+        break;
+      case TagType.interest:
+        final updated = List<String>.from(_currentUser!.interests)
+          ..add(tagValue.trim());
+        _currentUser = await _apiService.patchMe(interests: updated);
+      case TagType.ageRange:
+        _currentUser = await _apiService.patchMe(ageRange: tagValue.trim());
+      case TagType.gender:
+        _currentUser = await _apiService.patchMe(gender: tagValue.trim());
+    }
+    notifyListeners();
+  }
+
+  Future<void> updateAvailableTimes(List<TimeSlot> slots) async {
+    if (_currentUser == null) return;
+    _currentUser = await _apiService.patchMe(availableTimes: slots);
+    notifyListeners();
+  }
+
+  Future<void> addLocation(LocationModel location) async {
+    if (_currentUser == null) return;
+    final current = _currentUser!.locations;
+    if (current.length >= 3) return;
+    if (current.contains(location)) return;
+    final updated = List<LocationModel>.from(current)..add(location);
+    _currentUser = await _apiService.patchMe(locations: updated);
     notifyListeners();
   }
 
   void changePage(int index) {
     _currentPageIndex = index;
     notifyListeners();
-  }
-
-  void editProfile(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('프로필 편집 화면으로 이동')));
   }
 }
