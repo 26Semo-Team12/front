@@ -76,6 +76,7 @@ class UserProfile {
   });
 
   static const _unset = Object();
+  static const unset = _unset; // public alias for MockApiService
 
   UserProfile copyWith({
     String? name,

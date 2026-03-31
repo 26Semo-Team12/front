@@ -262,15 +262,10 @@ class UserProfileCard extends StatelessWidget {
                       ),
                     ),
 
-                  // time 태그 — 슬롯이 있으면 단일 태그, 없으면 추가 버튼
+                  // time 태그 — 슬롯이 있으면 단일 태그(편집 아이콘), 없으면 추가 버튼
                   if (user.availableTimes.isNotEmpty)
-                    UserProfileTag(
-                      text: '모임 가능 시간',
-                      color: kTagColors[TagType.time]!,
-                      onDelete: () =>
-                          viewModel.updateAvailableTimes([]),
-                      // 탭하면 편집 다이얼로그
-                      onTap: (ctx) => showDialog(
+                    _TimeTag(
+                      onEdit: (ctx) => showDialog(
                         context: ctx,
                         builder: (_) => TimePicker(
                           initialSlots: user.availableTimes,
@@ -410,6 +405,35 @@ class _LabeledAddButton extends StatelessWidget {
   }
 }
 
+// ─── _TimeTag (편집 아이콘, 삭제 없음) ──────────────────────────────────────
+class _TimeTag extends StatelessWidget {
+  final void Function(BuildContext) onEdit;
+  const _TimeTag({required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onEdit(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: kTagColors[TagType.time]!,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text('모임 가능 시간',
+                style: TextStyle(color: Colors.white, fontSize: 12)),
+            SizedBox(width: 4),
+            Icon(Icons.edit, size: 12, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── UserProfileTag ──────────────────────────────────────────────────────────
 class UserProfileTag extends StatelessWidget {
   final String text;
@@ -537,7 +561,14 @@ class _TagEditDialogState extends State<TagEditDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      title: _buildTypeSelector(),
+      title: Text(
+        _selectedType == TagType.gender
+            ? '성별 선택'
+            : _selectedType == TagType.ageRange
+                ? '연령 선택'
+                : '관심사 선택',
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
       content: SizedBox(
         width: double.maxFinite,
         child: _buildContent(),
@@ -548,39 +579,6 @@ class _TagEditDialogState extends State<TagEditDialog> {
           child: const Text('취소'),
         ),
       ],
-    );
-  }
-
-  Widget _buildTypeSelector() {
-    const types = [TagType.gender, TagType.ageRange, TagType.interest];
-    const labels = ['성별', '연령', '관심사'];
-    return Row(
-      children: List.generate(types.length, (i) {
-        final selected = _selectedType == types[i];
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedType = types[i]),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: selected ? const Color(0xFFD6706D) : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  labels[i],
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: selected ? Colors.white : Colors.grey.shade700,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }),
     );
   }
 
@@ -723,7 +721,7 @@ class _TagEditDialogState extends State<TagEditDialog> {
   }
 }
 
-// ─── FilterButton ────────────────────────────────────────────────────────────
+// ─── FilterButton (멀티 셀렉트) ──────────────────────────────────────────────
 class FilterButton extends StatelessWidget {
   final String label;
   final InvitationType type;
@@ -742,7 +740,8 @@ class FilterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFD6706D) : Colors.white,
@@ -764,13 +763,16 @@ class FilterButton extends StatelessWidget {
   }
 }
 
-// ─── InvitationSection ───────────────────────────────────────────────────────
+// ─── InvitationSection (멀티 셀렉트 + 페이드 애니메이션) ─────────────────────
 class InvitationSection extends StatelessWidget {
   const InvitationSection({super.key});
 
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<HomeViewModel>(context);
+    final filters = viewModel.activeFilters;
+    final invitations = viewModel.filteredInvitations;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -781,37 +783,129 @@ class InvitationSection extends StatelessWidget {
               FilterButton(
                 label: '새 초대장',
                 type: InvitationType.newInvitation,
-                isSelected:
-                    viewModel.activeFilter == InvitationType.newInvitation,
-                onTap: () =>
-                    viewModel.toggleFilter(InvitationType.newInvitation),
+                isSelected: filters.contains(InvitationType.newInvitation),
+                onTap: () => viewModel.toggleFilter(InvitationType.newInvitation),
               ),
               const SizedBox(width: 8),
               FilterButton(
                 label: '장기 모임',
                 type: InvitationType.longTerm,
-                isSelected: viewModel.activeFilter == InvitationType.longTerm,
+                isSelected: filters.contains(InvitationType.longTerm),
                 onTap: () => viewModel.toggleFilter(InvitationType.longTerm),
               ),
               const SizedBox(width: 8),
               FilterButton(
                 label: '만료된 초대장',
                 type: InvitationType.expired,
-                isSelected: viewModel.activeFilter == InvitationType.expired,
+                isSelected: filters.contains(InvitationType.expired),
                 onTap: () => viewModel.toggleFilter(InvitationType.expired),
               ),
             ],
           ),
         ),
         const SizedBox(height: 10),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: viewModel.filteredInvitations.length,
-          itemBuilder: (context, index) =>
-              InvitationCard(invitation: viewModel.filteredInvitations[index]),
-        ),
+        // AnimatedList 대신 각 카드에 AnimatedOpacity + AnimatedSize 적용
+        _AnimatedInvitationList(invitations: invitations),
       ],
+    );
+  }
+}
+
+class _AnimatedInvitationList extends StatefulWidget {
+  final List<Invitation> invitations;
+  const _AnimatedInvitationList({required this.invitations});
+
+  @override
+  State<_AnimatedInvitationList> createState() => _AnimatedInvitationListState();
+}
+
+class _AnimatedInvitationListState extends State<_AnimatedInvitationList> {
+  // 이전 목록을 기억해 페이드 처리
+  late List<Invitation> _all;
+  late Set<String> _visibleIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _all = List.from(widget.invitations);
+    _visibleIds = widget.invitations.map((e) => e.id).toSet();
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedInvitationList old) {
+    super.didUpdateWidget(old);
+    final newIds = widget.invitations.map((e) => e.id).toSet();
+    // 새로 추가된 항목을 _all에 병합
+    for (final inv in widget.invitations) {
+      if (!_all.any((e) => e.id == inv.id)) _all.add(inv);
+    }
+    setState(() => _visibleIds = newIds);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 정렬: type 순서 유지
+    _all.sort((a, b) => a.type.index.compareTo(b.type.index));
+    return Column(
+      children: _all.map((inv) {
+        final visible = _visibleIds.contains(inv.id);
+        return _FadeSlideItem(
+          key: ValueKey(inv.id),
+          visible: visible,
+          child: InvitationCard(invitation: inv),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _FadeSlideItem extends StatefulWidget {
+  final bool visible;
+  final Widget child;
+  const _FadeSlideItem({super.key, required this.visible, required this.child});
+
+  @override
+  State<_FadeSlideItem> createState() => _FadeSlideItemState();
+}
+
+class _FadeSlideItemState extends State<_FadeSlideItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+  late final Animation<double> _size;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      value: widget.visible ? 1.0 : 0.0,
+    );
+    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+    _size = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void didUpdateWidget(_FadeSlideItem old) {
+    super.didUpdateWidget(old);
+    if (widget.visible != old.visible) {
+      widget.visible ? _ctrl.forward() : _ctrl.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _size,
+      axisAlignment: -1,
+      child: FadeTransition(opacity: _opacity, child: widget.child),
     );
   }
 }

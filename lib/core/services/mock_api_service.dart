@@ -36,8 +36,8 @@ class MockApiService {
     List<LocationModel>? locations,
     List<TimeSlot>? availableTimes,
     List<String>? interests,
-    String? ageRange,
-    String? gender,
+    Object? ageRange = UserProfile.unset,
+    Object? gender = UserProfile.unset,
   }) async {
     _currentUser = _currentUser.copyWith(
       name: name,

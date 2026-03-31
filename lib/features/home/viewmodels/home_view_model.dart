@@ -11,19 +11,25 @@ class HomeViewModel extends ChangeNotifier {
   final MockApiService _apiService;
   UserProfile? _currentUser;
   List<Invitation> _invitations = [];
-  InvitationType? _activeFilter; // null이면 전체 표시
+  // 멀티 셀렉트 필터: 기본값 = 새 초대장 + 장기 모임 활성화
+  Set<InvitationType> _activeFilters = {
+    InvitationType.newInvitation,
+    InvitationType.longTerm,
+  };
+
+  Set<InvitationType> get activeFilters => Set.unmodifiable(_activeFilters);
   int _currentPageIndex = 0;
 
   HomeViewModel(this._apiService);
 
-  InvitationType? get activeFilter => _activeFilter;
+  InvitationType? get activeFilter => null; // 하위 호환용 (미사용)
   int get currentPageIndex => _currentPageIndex;
   UserProfile? get currentUser => _currentUser;
 
   List<Invitation> get filteredInvitations {
-    final list = _activeFilter == null
-        ? List<Invitation>.from(_invitations)
-        : _invitations.where((inv) => inv.type == _activeFilter).toList();
+    final list = _invitations
+        .where((inv) => _activeFilters.contains(inv.type))
+        .toList();
     list.sort((a, b) => a.type.index.compareTo(b.type.index));
     return list;
   }
@@ -35,7 +41,11 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void toggleFilter(InvitationType type) {
-    _activeFilter = (_activeFilter == type) ? null : type;
+    if (_activeFilters.contains(type)) {
+      _activeFilters.remove(type);
+    } else {
+      _activeFilters.add(type);
+    }
     notifyListeners();
   }
 
