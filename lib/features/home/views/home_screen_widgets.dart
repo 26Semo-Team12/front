@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'in_app_map_screen.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
 import '../models/invitation.dart';
 import '../viewmodels/home_view_model.dart';
+import '../../gathering/views/gathering_detail_screen.dart';
 import '../../settings/views/settings_screen.dart';
 import 'location_picker.dart';
 import 'time_picker.dart';
@@ -970,10 +970,10 @@ class InvitationCard extends StatelessWidget {
   }
 
   void _openDetail(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (_) => _InvitationDetailDialog(invitation: invitation),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GatheringDetailScreen(invitation: invitation),
+      ),
     );
   }
 
@@ -990,185 +990,8 @@ class InvitationCard extends StatelessWidget {
       );
 }
 
-// ─── 초대장 상세 팝업 ────────────────────────────────────────────────────────
-class _InvitationDetailDialog extends StatefulWidget {
-  final Invitation invitation;
-  const _InvitationDetailDialog({required this.invitation});
 
-  @override
-  State<_InvitationDetailDialog> createState() =>
-      _InvitationDetailDialogState();
-}
-
-class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
-    with SingleTickerProviderStateMixin {
-  bool _loading = true;
-  late final AnimationController _spinController;
-
-  @override
-  void initState() {
-    super.initState();
-    _spinController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) setState(() => _loading = false);
-    });
-  }
-
-  @override
-  void dispose() {
-    _spinController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
-          child: _loading ? _buildLoader() : _buildDetail(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoader() {
-    return Container(
-      key: const ValueKey('loader'),
-      color: Colors.black,
-      height: 520,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RotationTransition(
-              turns: _spinController,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    width: 2.5,
-                  ),
-                ),
-                child: const Icon(Icons.mail_outline,
-                    color: Colors.white, size: 28),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('초대장을 열고 있습니다...',
-                style: TextStyle(color: Colors.white70, fontSize: 13)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetail() {
-    final inv = widget.invitation;
-    return Stack(
-      key: const ValueKey('detail'),
-      children: [
-        // 배경 이미지
-        SizedBox(
-          height: 600,
-          width: double.infinity,
-          child: inv.imageUrl != null
-              ? Image.network(inv.imageUrl!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      _debugPlaceholder())
-              : _debugPlaceholder(),
-        ),
-        // 어두운 오버레이
-        Positioned.fill(
-          child: Container(color: Colors.black.withValues(alpha: 0.35)),
-        ),
-        // 닫기 버튼
-        Positioned(
-          top: 8,
-          right: 8,
-          child: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        // 지도 버튼 (디버그용)
-        Positioned(
-          top: 8,
-          left: 8,
-          child: _MapButton(location: inv.location),
-        ),
-        // 하단 정보 (준비 중)
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.75),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: const Text(
-              '상세 정보 준비 중입니다.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  Widget _debugPlaceholder() => Container(
-        color: Colors.grey.shade800,
-        child: const Center(
-          child: Text(
-            '예시 초대장 이미지',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
-          ),
-        ),
-      );
-}
 
 // ─── 하위 호환용 AddTagDialog alias ─────────────────────────────────────────
 typedef AddTagDialog = TagEditDialog;
 
-// ─── 지도 버튼 (앱 내 지도) ──────────────────────────────────────────────────
-class _MapButton extends StatelessWidget {
-  final String location;
-  const _MapButton({required this.location});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.map_outlined, color: Colors.white),
-        tooltip: '지도 열기',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => InAppMapScreen(locationName: location),
-          ),
-        ),
-      ),
-    );
-  }
-}
