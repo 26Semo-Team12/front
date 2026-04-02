@@ -33,10 +33,7 @@ class InAppMapScreen extends StatelessWidget {
       body: Stack(
         children: [
           FlutterMap(
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: 15,
-            ),
+            options: MapOptions(initialCenter: center, initialZoom: 15),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -60,7 +57,9 @@ class InAppMapScreen extends StatelessWidget {
           ),
           // 장소 이름 하단 카드
           Positioned(
-            left: 16, right: 16, bottom: 24,
+            left: 16,
+            right: 16,
+            bottom: 24,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -81,7 +80,10 @@ class InAppMapScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       locationName,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   if (lat == null)

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/home/views/home_screen.dart'; // 분리해 둔 홈 화면 import
+import 'features/splash/views/splash_screen.dart'; // 스플래시 → Auth → Home 진입 플로우
 
 void main() {
   runApp(const VentureApp());
@@ -24,8 +24,8 @@ class VentureApp extends StatelessWidget {
           elevation: 0, // 앱바 그림자 제거
         ),
       ),
-      // 기본 카운터 앱 대신 우리가 만든 HomeScreen을 진입점으로 설정!
-      home: const HomeScreen(),
+      // 스플래시 → AuthScreen → HomeScreen 초기 진입 플로우
+      home: const SplashScreen(),
     );
   }
 }
