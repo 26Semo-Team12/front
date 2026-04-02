@@ -36,9 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   url_launcher: ^6.3.1
+  video_player: ^2.9.2
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
-  video_player: ^2.8.3
 
 dev_dependencies:
   flutter_test:
@@ -64,9 +64,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/videos/왁스_실링_종이_열림_영상.mp4
+    - assets/images/
+    - assets/images/왁스_실링_종이_열림_영상.mp4
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

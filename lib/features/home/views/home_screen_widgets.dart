@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import 'in_app_map_screen.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
@@ -1004,81 +1005,45 @@ class _InvitationDetailDialog extends StatefulWidget {
       _InvitationDetailDialogState();
 }
 
-class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
-    with SingleTickerProviderStateMixin {
+class _InvitationDetailDialogState extends State<_InvitationDetailDialog> {
   bool _loading = true;
-  late final AnimationController _ctrl;
-
-  // ① 뚜껑 열림: 0.00 ~ 0.48 구간, X축 회전 0 → -π
-  late final Animation<double> _lidAngle;
-  // ② 편지지 슬라이드: 0.52 ~ 0.92 구간
-  late final Animation<double> _paperSlide;
-  // ③ 편지지 페이드: 0.52 ~ 0.66 구간
-  late final Animation<double> _paperFade;
-  // ④ 텍스트 페이드: 0.90 ~ 1.0 구간
-  late final Animation<double> _textFade;
-
-  // ── 봉투 치수 ──────────────────────────────────────────────
-  // 봉투 몸통 (앞면/뒷면 공통)
-  static const double _envW  = 280.0;
-  static const double _envH  = 190.0;
-  // 뚜껑 삼각형 높이 (봉투 너비의 절반 → 45° 각도)
-  static const double _lidH  = 140.0;
-  // 편지지 치수
-  static const double _paperW = 248.0;
-  static const double _paperH = 200.0;
-  // 편지지가 봉투 위로 올라오는 최대 거리
-  static const double _rise  = 130.0;
+  late final VideoPlayerController _videoController;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2600),
+    _videoController = VideoPlayerController.networkUrl(
+      Uri.parse('assets/images/왁스_실링_종이_열림_영상.mp4'),
     );
+    _initVideo();
+  }
 
-    _lidAngle = Tween<double>(begin: 0.0, end: -3.14159).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.00, 0.48, curve: Curves.easeInOut),
-      ),
-    );
-    _paperSlide = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.52, 0.92, curve: Curves.easeInOut),
-      ),
-    );
-    _paperFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.52, 0.66, curve: Curves.easeIn),
-      ),
-    );
-    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.90, 1.0, curve: Curves.easeIn),
-      ),
-    );
+  Future<void> _initVideo() async {
+    try {
+      await _videoController.initialize();
+      if (!mounted) return;
+      _videoController.addListener(_onVideoUpdate);
+      setState(() {});
+      await _videoController.play();
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
-    Future.delayed(const Duration(milliseconds: 350), () {
-      if (mounted) _ctrl.forward();
-    });
-
-    _ctrl.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        Future.delayed(const Duration(milliseconds: 700), () {
-          if (mounted) setState(() => _loading = false);
-        });
-      }
-    });
+  void _onVideoUpdate() {
+    if (!mounted) return;
+    final val = _videoController.value;
+    if (val.duration > Duration.zero &&
+        val.position > const Duration(milliseconds: 300) &&
+        val.position >= val.duration - const Duration(milliseconds: 200)) {
+      _videoController.removeListener(_onVideoUpdate);
+      setState(() => _loading = false);
+    }
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _videoController.dispose();
     super.dispose();
   }
 
@@ -1098,128 +1063,20 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
   }
 
   Widget _buildLoader() {
-    // 전체 Stack 높이: 뚜껑 + 봉투 몸통 + 편지지 올라올 공간
-    const double stackH = _lidH + _envH + _rise;
-    // 봉투 앞면이 가리는 영역: top=_lidH, height=_envH
-    // 편지지 시작 top: slide=0 → 봉투 내부 바닥 근처, slide=1 → 봉투 위로 _rise만큼
-    // 편지지 top(slide=0) = _lidH + _envH - 20  (봉투 바닥 근처, 앞면에 완전히 가려짐)
-    // 편지지 top(slide=1) = _lidH - _rise        (봉투 위로 올라옴)
-    const double paperTopHidden = _lidH + _envH - 20.0;
-    const double paperTopShown  = _lidH - _rise;
-
     return Container(
       key: const ValueKey('loader'),
-      color: const Color(0xFF0F0F1A),
-      height: 520,
-      child: Center(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (context, _) {
-            final paperTop = paperTopHidden +
-                (_paperSlide.value * (paperTopShown - paperTopHidden));
-
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: _envW,
-                  height: stackH,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // ── Layer 1: 봉투 뒷면 배경 ──────────────────────────
-                      Positioned(
-                        left: 0, top: _lidH,
-                        child: CustomPaint(
-                          size: const Size(_envW, _envH),
-                          painter: _EnvelopeBackPainter(),
-                        ),
-                      ),
-
-                      // ── Layer 2: 편지지 (봉투 앞면 뒤에 위치) ────────────
-                      // 봉투 앞면 영역(_lidH ~ _lidH+_envH)에서는 앞면이 가려줌
-                      Positioned(
-                        left: (_envW - _paperW) / 2,
-                        top: paperTop,
-                        child: Opacity(
-                          opacity: _paperFade.value,
-                          child: _buildPaper(),
-                        ),
-                      ),
-
-                      // ── Layer 3: 봉투 앞면 (왁스 씰 포함) ────────────────
-                      // 편지지가 이 레이어를 절대 뚫고 나올 수 없음
-                      Positioned(
-                        left: 0, top: _lidH,
-                        child: CustomPaint(
-                          size: const Size(_envW, _envH),
-                          painter: _EnvelopeFrontPainter(),
-                        ),
-                      ),
-
-                      // ── Layer 4: 봉투 뚜껑 (앞면 상단에서 뒤로 회전) ─────
-                      // 뚜껑 하단 = 봉투 상단(_lidH)에 정확히 정렬
-                      Positioned(
-                        left: 0, top: _lidH,
-                        child: Transform(
-                          alignment: Alignment.bottomCenter,
-                          transform: Matrix4.identity()
-                            ..setEntry(3, 2, 0.0007)
-                            ..rotateX(_lidAngle.value),
-                          child: CustomPaint(
-                            size: const Size(_envW, _lidH),
-                            painter: _EnvelopeLidPainter(
-                              openProgress: (_ctrl.value / 0.48).clamp(0.0, 1.0),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Opacity(
-                  opacity: _textFade.value,
-                  child: const Text(
-                    '초대장을 확인하고 있습니다...',
-                    style: TextStyle(
-                      color: Color(0xFFD4C5B0),
-                      fontSize: 14,
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  /// 완전히 빈 흰색 편지지
-  Widget _buildPaper() {
-    return Container(
-      width: _paperW,
-      height: _paperH,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 24,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: Colors.black,
+      child: _videoController.value.isInitialized
+          ? AspectRatio(
+              aspectRatio: _videoController.value.aspectRatio,
+              child: VideoPlayer(_videoController),
+            )
+          : const SizedBox(
+              height: 520,
+              child: Center(
+                child: CircularProgressIndicator(color: Colors.white54),
+              ),
+            ),
     );
   }
 
@@ -1230,13 +1087,11 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
       children: [
         // 배경 이미지
         SizedBox(
-          height: 600,
           width: double.infinity,
-          child: inv.imageUrl != null
-              ? Image.network(inv.imageUrl!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      _debugPlaceholder())
-              : _debugPlaceholder(),
+          child: Image.asset(
+            'assets/images/초대장 이미지.png',
+            fit: BoxFit.contain,
+          ),
         ),
         // 어두운 오버레이
         Positioned.fill(
@@ -1292,215 +1147,6 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
           ),
         ),
       );
-}
-
-// ─── 봉투 뒷면 Painter (Layer 1) ────────────────────────────────────────────
-class _EnvelopeBackPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 외부 그림자
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(3, 6, size.width, size.height),
-        const Radius.circular(6),
-      ),
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.35)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
-    );
-
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      const Radius.circular(6),
-    );
-
-    // 아이보리 배경
-    canvas.drawRRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [const Color(0xFFF8F4EE), const Color(0xFFEDE8E0)],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
-
-    // 테두리
-    canvas.drawRRect(
-      rect,
-      Paint()
-        ..color = const Color(0xFFD8D0C4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
-}
-
-// ─── 봉투 앞면 Painter (Layer 3) — 왁스 씰 포함 ─────────────────────────────
-class _EnvelopeFrontPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      const Radius.circular(6),
-    );
-
-    // 앞면 아이보리 (뒷면과 동일 톤)
-    canvas.drawRRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [const Color(0xFFF5F1EB), const Color(0xFFEAE4DA)],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
-
-    // 접힘선 — 하단 V (봉투 앞면 특유의 마름모 접힘)
-    final foldPaint = Paint()
-      ..color = const Color(0xFFCCC4B8).withValues(alpha: 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    final cx = size.width / 2;
-    final cy = size.height * 0.44;
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, size.height)
-        ..lineTo(cx, cy)
-        ..lineTo(size.width, size.height),
-      foldPaint,
-    );
-    canvas.drawPath(Path()..moveTo(0, 0)..lineTo(cx, cy), foldPaint);
-    canvas.drawPath(Path()..moveTo(size.width, 0)..lineTo(cx, cy), foldPaint);
-
-    // 테두리
-    canvas.drawRRect(
-      rect,
-      Paint()
-        ..color = const Color(0xFFD0C8BC)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0,
-    );
-
-    // ── 왁스 씰 (중앙 하단 접힘선 교차점) ──────────────────────────────────
-    final sealCx = size.width / 2;
-    final sealCy = cy + 8; // 접힘선 교차점 바로 아래
-    const sealR = 22.0;
-
-    // 씰 외부 그림자
-    canvas.drawCircle(
-      Offset(sealCx, sealCy + 3),
-      sealR,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.30)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
-
-    // 씰 본체 — 진한 크림슨 레드
-    canvas.drawCircle(
-      Offset(sealCx, sealCy),
-      sealR,
-      Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.3, -0.4),
-          radius: 1.0,
-          colors: [
-            const Color(0xFFC0394B), // 하이라이트
-            const Color(0xFF8B1A2A), // 기본 크림슨
-            const Color(0xFF6B1020), // 어두운 가장자리
-          ],
-          stops: const [0.0, 0.55, 1.0],
-        ).createShader(
-          Rect.fromCircle(center: Offset(sealCx, sealCy), radius: sealR),
-        ),
-    );
-
-    // 씰 테두리 (약간 밝은 테두리로 입체감)
-    canvas.drawCircle(
-      Offset(sealCx, sealCy),
-      sealR,
-      Paint()
-        ..color = const Color(0xFFB03040).withValues(alpha: 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-
-    // 씰 내부 하이라이트 (광택)
-    canvas.drawCircle(
-      Offset(sealCx - 7, sealCy - 7),
-      6.0,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.12)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-    );
-
-    // 씰 내부 텍스처 — 작은 동심원 (왁스 질감)
-    final texturePaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    canvas.drawCircle(Offset(sealCx, sealCy), sealR * 0.65, texturePaint);
-    canvas.drawCircle(Offset(sealCx, sealCy), sealR * 0.35, texturePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
-}
-
-// ─── 봉투 뚜껑 Painter (Layer 4) ────────────────────────────────────────────
-class _EnvelopeLidPainter extends CustomPainter {
-  final double openProgress; // 0.0 = 닫힘, 1.0 = 완전히 열림
-
-  _EnvelopeLidPainter({required this.openProgress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 열릴수록 약간 밝아지는 아이보리
-    final baseColor = Color.lerp(
-      const Color(0xFFEDE8E0),
-      const Color(0xFFF8F4EE),
-      openProgress,
-    )!;
-
-    // 삼각형 경로: 좌하 → 꼭대기 → 우하 (뚜껑 하단이 봉투 상단과 정렬)
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height)
-      ..close();
-
-    // 뚜껑 채우기 (그라디언트)
-    canvas.drawPath(
-      path,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.lerp(baseColor, const Color(0xFFD8D0C4), 0.2)!,
-            baseColor,
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
-
-    // 뚜껑 테두리
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFFCCC4B8)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _EnvelopeLidPainter old) =>
-      old.openProgress != openProgress;
 }
 
 // ─── 하위 호환용 AddTagDialog alias ─────────────────────────────────────────
