@@ -2,7 +2,7 @@
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/user_profile.dart';
-import '../../../core/models/enums.dart';
+import '../../../core/services/mock_api_service.dart';
 
 /// 회원가입/로그인을 담당하는 서비스 레이어
 class AuthService {
@@ -19,18 +19,11 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', 'mock_jwt_token_for_$email');
 
-    // 3. UserProfile 생성 (DB schema 기반)
-    final profile = UserProfile(
-      id: 2,
+    // 3. Mock Api Service 중앙 레포지토리 업데이트
+    // 신규 로그인인 경우 이메일을 세팅하고 기본 뼈대 정보를 등록해둡니다.
+    final profile = await MockApiService.instance.patchMe(
       email: email,
       name: email.split('@').first,
-      birthYear: 1998,
-      gender: GenderType.female,
-      region: '서울시 강남구',
-      profileImageUrl: 'https://picsum.photos/seed/$email/200',
-      reputationScore: 10,
-      onboardingStep: 2,
-      isProfileCompleted: false,
     );
 
     return profile;

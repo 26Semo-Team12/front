@@ -14,7 +14,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => HomeViewModel(MockApiService())..init(),
+      create: (_) => HomeViewModel(MockApiService.instance)..init(),
       child: const _HomeScreenContent(),
     );
   }

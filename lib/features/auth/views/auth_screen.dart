@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_view_model.dart';
 import '../../home/views/home_screen.dart';
+import '../../profile/views/onboarding_screen.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -26,19 +27,30 @@ class _AuthScreenContent extends StatefulWidget {
 
 class _AuthScreenContentState extends State<_AuthScreenContent> {
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _navigateToHome() {
+  void _onAuthSuccess(bool isSignup) {
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (route) => false,
-    );
+    if (isSignup) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        (route) => false,
+      );
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -83,9 +95,15 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
               // ── 이메일 입력란 ──
               TextFormField(
                 controller: _emailController,
+                readOnly: viewModel.isEmailSubmitted,
                 keyboardType: TextInputType.emailAddress,
                 onChanged: viewModel.updateEmail,
+                style: TextStyle(
+                  color: viewModel.isEmailSubmitted ? Colors.grey.shade600 : Colors.black87,
+                ),
                 decoration: InputDecoration(
+                  fillColor: viewModel.isEmailSubmitted ? Colors.grey.shade100 : Colors.white,
+                  filled: viewModel.isEmailSubmitted,
                   hintText: 'email@domain.com',
                   hintStyle: TextStyle(
                     color: Colors.grey.shade400,
@@ -117,6 +135,75 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
                   errorText: viewModel.emailError,
                 ),
               ),
+              if (viewModel.isEmailSubmitted) ...[
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  onChanged: viewModel.updatePassword,
+                  decoration: InputDecoration(
+                    hintText: '비밀번호',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 15,
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFD6706D), width: 1.5),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.redAccent),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                    ),
+                    errorText: viewModel.passwordError,
+                  ),
+                ),
+                
+                if (!viewModel.isExistingUser) ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    onChanged: viewModel.updateConfirmPassword,
+                    decoration: InputDecoration(
+                      hintText: '비밀번호 확인',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 15,
+                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFD6706D), width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+
               const SizedBox(height: 20),
 
               // ── '계속' 버튼 ──
@@ -127,7 +214,7 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
                   onPressed: viewModel.isLoading
                       ? null
                       : () =>
-                          viewModel.onContinuePressed(_navigateToHome),
+                          viewModel.onContinuePressed(_onAuthSuccess),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     disabledBackgroundColor: Colors.grey.shade400,
@@ -146,9 +233,13 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          '계속',
-                          style: TextStyle(
+                      : Text(
+                          !viewModel.isEmailSubmitted
+                              ? '계속'
+                              : viewModel.isExistingUser
+                                  ? '로그인'
+                                  : '가입하기',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -178,9 +269,9 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
 
               // ── Google 로그인 버튼 ──
               _SocialLoginButton(
-                onTap: viewModel.isLoading
+                onTap: (viewModel.isLoading || viewModel.isEmailSubmitted)
                     ? null
-                    : () => viewModel.onGoogleSignIn(_navigateToHome),
+                    : () => viewModel.onGoogleSignIn(_onAuthSuccess),
                 icon: _GoogleIcon(),
                 label: 'Google 계정으로 계속하기',
               ),
@@ -188,9 +279,9 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
 
               // ── Apple 로그인 버튼 ──
               _SocialLoginButton(
-                onTap: viewModel.isLoading
+                onTap: (viewModel.isLoading || viewModel.isEmailSubmitted)
                     ? null
-                    : () => viewModel.onAppleSignIn(_navigateToHome),
+                    : () => viewModel.onAppleSignIn(_onAuthSuccess),
                 icon: const Icon(Icons.apple, size: 22, color: Colors.black),
                 label: 'Apple 계정으로 계속하기',
               ),

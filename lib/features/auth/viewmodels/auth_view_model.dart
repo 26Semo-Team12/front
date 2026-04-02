@@ -14,16 +14,42 @@ class AuthViewModel extends ChangeNotifier {
   String? _emailError;
   bool _isLoading = false;
 
+  bool _isEmailSubmitted = false;
+  bool _isExistingUser = false;
+  String _password = '';
+  String _confirmPassword = '';
+  String? _passwordError;
+
   String get email => _email;
   String? get emailError => _emailError;
   bool get isLoading => _isLoading;
 
-  /// 이메일 입력값 업데이트
+  bool get isEmailSubmitted => _isEmailSubmitted;
+  bool get isExistingUser => _isExistingUser;
+  String get password => _password;
+  String get confirmPassword => _confirmPassword;
+  String? get passwordError => _passwordError;
+
   void updateEmail(String value) {
     _email = value;
-    // 입력 중 에러 메시지 초기화
     if (_emailError != null) {
       _emailError = null;
+      notifyListeners();
+    }
+  }
+
+  void updatePassword(String value) {
+    _password = value;
+    if (_passwordError != null) {
+      _passwordError = null;
+      notifyListeners();
+    }
+  }
+
+  void updateConfirmPassword(String value) {
+    _confirmPassword = value;
+    if (_passwordError != null) {
+      _passwordError = null;
       notifyListeners();
     }
   }
@@ -49,19 +75,50 @@ class AuthViewModel extends ChangeNotifier {
     return true;
   }
 
-  /// '계속' 버튼 클릭 시 호출
-  /// 유효성 검사 성공 시 [onSuccess] 콜백 호출
-  Future<void> onContinuePressed(VoidCallback onSuccess) async {
-    if (!_validateEmail()) return;
+  Future<void> onContinuePressed(void Function(bool isSignup) onSuccess) async {
+    if (!_isEmailSubmitted) {
+      if (!_validateEmail()) return;
+      _isLoading = true;
+      notifyListeners();
+      
+      // Mock User Check (test@test.com == 기존유저)
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      _isEmailSubmitted = true;
+      _isExistingUser = (_email.trim() == 'test@test.com');
+      
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    if (_password.trim().isEmpty) {
+      _passwordError = '비밀번호를 입력해 주세요.';
+      notifyListeners();
+      return;
+    }
+    
+    if (!_isExistingUser) {
+      if (_password.trim().length < 6) {
+        _passwordError = '비밀번호는 6자리 이상이어야 합니다.';
+        notifyListeners();
+        return;
+      }
+      if (_password != _confirmPassword) {
+        _passwordError = '비밀번호가 일치하지 않습니다.';
+        notifyListeners();
+        return;
+      }
+    }
 
     _isLoading = true;
     notifyListeners();
 
     try {
       await _authService.signInWithEmail(_email.trim());
-      onSuccess();
+      onSuccess(!_isExistingUser);
     } catch (e) {
-      _emailError = '로그인에 실패했습니다: $e';
+      _passwordError = '로그인에 실패했습니다: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -69,7 +126,7 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Google 로그인 (Mock)
-  Future<void> onGoogleSignIn(VoidCallback onSuccess) async {
+  Future<void> onGoogleSignIn(void Function(bool isSignup) onSuccess) async {
     _isLoading = true;
     notifyListeners();
 
@@ -78,11 +135,11 @@ class AuthViewModel extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
 
-    onSuccess();
+    onSuccess(false);
   }
 
   /// Apple 로그인 (Mock)
-  Future<void> onAppleSignIn(VoidCallback onSuccess) async {
+  Future<void> onAppleSignIn(void Function(bool isSignup) onSuccess) async {
     _isLoading = true;
     notifyListeners();
 
@@ -91,6 +148,6 @@ class AuthViewModel extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
 
-    onSuccess();
+    onSuccess(false);
   }
 }

@@ -8,6 +8,8 @@ import 'package:front/features/home/models/invitation.dart';
 /// 실제 HTTP 클라이언트 없이 Future를 반환하여 비동기 API 패턴을 모방합니다.
 /// 내부에 _currentUser 상태를 유지하여 patchMe 후 getMe가 수정된 데이터를 반환합니다.
 class MockApiService {
+  static final MockApiService instance = MockApiService();
+
   UserProfile _currentUser = UserProfile(
     id: 1,
     email: 'mock@venture.com',
@@ -39,6 +41,7 @@ class MockApiService {
   /// 프로필을 수정하고 수정된 UserProfile을 반환합니다.
   /// 요구사항 10.2
   Future<UserProfile> patchMe({
+    String? email,
     String? name,
     String? profileImageUrl,
     List<LocationModel>? locations,
@@ -48,6 +51,7 @@ class MockApiService {
     Object? gender = UserProfile.unset,
   }) async {
     _currentUser = _currentUser.copyWith(
+      email: email,
       name: name,
       profileImageUrl: profileImageUrl,
       locations: locations,
