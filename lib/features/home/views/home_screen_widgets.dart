@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'in_app_map_screen.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
 import '../models/invitation.dart';
 import '../viewmodels/home_view_model.dart';
+import '../../gathering/views/gathering_detail_screen.dart';
 import '../../settings/views/settings_screen.dart';
 import 'location_picker.dart';
 import 'time_picker.dart';
@@ -18,15 +18,6 @@ import 'time_picker.dart';
 const List<String> _chosungList = [
   'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ',
   'ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
-];
-const List<String> _jungsungList = [
-  'ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ',
-  'ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ',
-];
-const List<String> _jongsungList = [
-  '','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ',
-  'ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ',
-  'ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
 ];
 
 /// 한글 음절을 [초성, 중성, 종성] 인덱스로 분해. 비한글이면 null.
@@ -290,12 +281,12 @@ class UserProfileCard extends StatelessWidget {
                     ),
 
                   // gender 태그
-                  if (user.gender?.isNotEmpty ?? false)
+                  if (user.gender != null)
                     UserProfileTag(
-                      text: user.gender!,
+                      text: user.gender!.displayName,
                       color: kTagColors[TagType.gender]!,
                       onDelete: () =>
-                          viewModel.removeTag(user.gender!, TagType.gender),
+                          viewModel.removeTag(user.gender!.displayName, TagType.gender),
                       onTap: (ctx) => showDialog(
                         context: ctx,
                         builder: (_) => TagEditDialog(
@@ -304,7 +295,7 @@ class UserProfileCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (!(user.gender?.isNotEmpty ?? false))
+                  if (user.gender == null)
                     _LabeledAddButton(
                       label: '성별 추가',
                       onTap: (ctx) => showDialog(
@@ -523,9 +514,6 @@ class _TagEditDialogState extends State<TagEditDialog> {
 
   // 성별
   String? _selectedGender;
-
-  // 연령
-  int? _selectedAge;
 
   // 관심사 검색
   final TextEditingController _searchController = TextEditingController();
@@ -947,37 +935,201 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
 }
 
 // ─── InvitationCard (이미지만, 탭 시 로딩 → 상세 팝업) ─────────────────────
+
+/// 날짜 포맷 함수 (YYYY년 M월 D일 HH:mm)
+String formatDateTime(DateTime dt) {
+  final hour = dt.hour.toString().padLeft(2, '0');
+  final minute = dt.minute.toString().padLeft(2, '0');
+  return '${dt.year}년 ${dt.month}월 ${dt.day}일 $hour:$minute';
+}
+
 class InvitationCard extends StatelessWidget {
   final Invitation invitation;
   const InvitationCard({super.key, required this.invitation});
 
   @override
   Widget build(BuildContext context) {
+    Widget cardChild;
+
+    switch (invitation.type) {
+      case InvitationType.newInvitation:
+        cardChild = _buildNewInvitation();
+        break;
+      case InvitationType.expired:
+        cardChild = _buildExpiredInvitation();
+        break;
+      case InvitationType.longTerm:
+        cardChild = _buildLongTermInvitation();
+        break;
+    }
+
     return GestureDetector(
       onTap: () => _openDetail(context),
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        clipBehavior: Clip.antiAlias,
-        child: invitation.imageUrl != null
-            ? Image.network(
-                invitation.imageUrl!,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _placeholder(),
-              )
-            : _placeholder(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: cardChild,
+      ),
+    );
+  }
+
+  Widget _buildContentImage() {
+    return invitation.imageUrl != null
+        ? Image.network(
+            invitation.imageUrl!,
+            height: 160,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _placeholder(),
+          )
+        : _placeholder();
+  }
+
+  Widget _buildNewInvitation() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD6706D), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD6706D).withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10.5),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            _buildContentImage(),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpiredInvitation() {
+    return Opacity(
+      opacity: 0.6,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+               ColorFiltered(
+                 colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+                 child: _buildContentImage(),
+               ),
+               Positioned(
+                 top: 12, right: 12,
+                 child: Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                   color: Colors.white70,
+                   child: Text('만료됨', style: TextStyle(color: Colors.grey.shade800, fontSize: 10, fontWeight: FontWeight.bold)),
+                 ),
+               )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLongTermInvitation() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            _buildContentImage(),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 12),
+                    SizedBox(width: 4),
+                    Text('D+12', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Row(
+                children: [
+                  _buildOverlapAvatar(),
+                  _buildOverlapAvatar(),
+                  _buildOverlapAvatar(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverlapAvatar() {
+    return Align(
+      widthFactor: 0.6,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey.shade400,
+          border: Border.all(color: Colors.white, width: 1.5),
+        ),
+        child: const Icon(Icons.person, size: 16, color: Colors.white),
       ),
     );
   }
 
   void _openDetail(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (_) => _InvitationDetailDialog(invitation: invitation),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GatheringDetailScreen(invitation: invitation),
+      ),
     );
   }
 
@@ -994,185 +1146,8 @@ class InvitationCard extends StatelessWidget {
       );
 }
 
-// ─── 초대장 상세 팝업 ────────────────────────────────────────────────────────
-class _InvitationDetailDialog extends StatefulWidget {
-  final Invitation invitation;
-  const _InvitationDetailDialog({required this.invitation});
 
-  @override
-  State<_InvitationDetailDialog> createState() =>
-      _InvitationDetailDialogState();
-}
-
-class _InvitationDetailDialogState extends State<_InvitationDetailDialog>
-    with SingleTickerProviderStateMixin {
-  bool _loading = true;
-  late final AnimationController _spinController;
-
-  @override
-  void initState() {
-    super.initState();
-    _spinController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) setState(() => _loading = false);
-    });
-  }
-
-  @override
-  void dispose() {
-    _spinController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
-          child: _loading ? _buildLoader() : _buildDetail(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoader() {
-    return Container(
-      key: const ValueKey('loader'),
-      color: Colors.black,
-      height: 520,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RotationTransition(
-              turns: _spinController,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    width: 2.5,
-                  ),
-                ),
-                child: const Icon(Icons.mail_outline,
-                    color: Colors.white, size: 28),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('초대장을 열고 있습니다...',
-                style: TextStyle(color: Colors.white70, fontSize: 13)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetail() {
-    final inv = widget.invitation;
-    return Stack(
-      key: const ValueKey('detail'),
-      children: [
-        // 배경 이미지
-        SizedBox(
-          height: 600,
-          width: double.infinity,
-          child: inv.imageUrl != null
-              ? Image.network(inv.imageUrl!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      _debugPlaceholder())
-              : _debugPlaceholder(),
-        ),
-        // 어두운 오버레이
-        Positioned.fill(
-          child: Container(color: Colors.black.withValues(alpha: 0.35)),
-        ),
-        // 닫기 버튼
-        Positioned(
-          top: 8,
-          right: 8,
-          child: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        // 지도 버튼 (디버그용)
-        Positioned(
-          top: 8,
-          left: 8,
-          child: _MapButton(location: inv.location),
-        ),
-        // 하단 정보 (준비 중)
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.75),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: const Text(
-              '상세 정보 준비 중입니다.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  Widget _debugPlaceholder() => Container(
-        color: Colors.grey.shade800,
-        child: const Center(
-          child: Text(
-            '예시 초대장 이미지',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
-          ),
-        ),
-      );
-}
 
 // ─── 하위 호환용 AddTagDialog alias ─────────────────────────────────────────
 typedef AddTagDialog = TagEditDialog;
 
-// ─── 지도 버튼 (앱 내 지도) ──────────────────────────────────────────────────
-class _MapButton extends StatelessWidget {
-  final String location;
-  const _MapButton({required this.location});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.map_outlined, color: Colors.white),
-        tooltip: '지도 열기',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => InAppMapScreen(locationName: location),
-          ),
-        ),
-      ),
-    );
-  }
-}

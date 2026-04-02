@@ -1,24 +1,34 @@
 // lib/core/services/mock_api_service.dart
 
 import 'package:front/core/models/user_profile.dart';
+import 'package:front/core/models/enums.dart';
 import 'package:front/features/home/models/invitation.dart';
 
 /// MockApiService
 /// 실제 HTTP 클라이언트 없이 Future를 반환하여 비동기 API 패턴을 모방합니다.
 /// 내부에 _currentUser 상태를 유지하여 patchMe 후 getMe가 수정된 데이터를 반환합니다.
 class MockApiService {
+  static final MockApiService instance = MockApiService();
+
   UserProfile _currentUser = UserProfile(
+    id: 1,
+    email: 'mock@venture.com',
     name: '김벤처',
+    birthYear: 1995,
+    gender: GenderType.male,
+    region: '서울시 강남구',
     profileImageUrl: 'https://picsum.photos/seed/user1/200',
-    locations: [LocationModel(province: '로렘시', district: '입숨구')],
-    availableTimes: [
+    reputationScore: 45,
+    onboardingStep: 3,
+    isProfileCompleted: true,
+    locations: [const LocationModel(province: '로렘시', district: '입숨구')],
+    availableTimes: const [
       TimeSlot(weekday: 0, hourIndex: 9),
       TimeSlot(weekday: 2, hourIndex: 14),
       TimeSlot(weekday: 4, hourIndex: 19),
     ],
-    interests: ['등산', '독서', '요리'],
+    interests: const ['등산', '독서', '요리'],
     ageRange: '20대',
-    gender: '남성',
     rating: 4.5,
   );
 
@@ -31,6 +41,7 @@ class MockApiService {
   /// 프로필을 수정하고 수정된 UserProfile을 반환합니다.
   /// 요구사항 10.2
   Future<UserProfile> patchMe({
+    String? email,
     String? name,
     String? profileImageUrl,
     List<LocationModel>? locations,
@@ -40,6 +51,7 @@ class MockApiService {
     Object? gender = UserProfile.unset,
   }) async {
     _currentUser = _currentUser.copyWith(
+      email: email,
       name: name,
       profileImageUrl: profileImageUrl,
       locations: locations,

@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import '../../../core/models/user_profile.dart';
+import '../../../core/models/enums.dart';
 import '../../../core/services/mock_api_service.dart';
 import '../models/invitation.dart';
 
@@ -87,7 +88,8 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> addTag(String tagValue, TagType type) async {
-    if (tagValue.trim().isEmpty) return;
+    final val = tagValue.trim();
+    if (val.isEmpty) return;
     if (_currentUser == null) return;
     switch (type) {
       case TagType.location:
@@ -96,12 +98,16 @@ class HomeViewModel extends ChangeNotifier {
         break;
       case TagType.interest:
         final updated = List<String>.from(_currentUser!.interests)
-          ..add(tagValue.trim());
+          ..add(val);
         _currentUser = await _apiService.patchMe(interests: updated);
       case TagType.ageRange:
-        _currentUser = await _apiService.patchMe(ageRange: tagValue.trim());
+        _currentUser = await _apiService.patchMe(ageRange: val);
       case TagType.gender:
-        _currentUser = await _apiService.patchMe(gender: tagValue.trim());
+        GenderType? mapped;
+        if (val == '남성') mapped = GenderType.male;
+        else if (val == '여성') mapped = GenderType.female;
+        else mapped = GenderType.other;
+        _currentUser = await _apiService.patchMe(gender: mapped);
     }
     notifyListeners();
   }

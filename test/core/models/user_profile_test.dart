@@ -6,20 +6,27 @@ import 'dart:math';
 import 'package:glados/glados.dart';
 import 'package:test/test.dart';
 import 'package:front/core/models/user_profile.dart';
+import 'package:front/core/models/enums.dart';
 
 UserProfile _makeProfile({
+  int id = 1,
+  String email = 'test@domain.com',
   String name = '홍길동',
+  String region = '서울',
   String profileImageUrl = 'https://example.com/image.jpg',
   List<String>? interests,
   String? ageRange = '20대',
-  String? gender = '남성',
+  GenderType? gender = GenderType.male,
   double rating = 4.5,
 }) {
   return UserProfile(
+    id: id,
+    email: email,
     name: name,
+    region: region,
     profileImageUrl: profileImageUrl,
-    locations: [],
-    availableTimes: [],
+    locations: const [],
+    availableTimes: const [],
     interests: interests ?? ['독서', '여행'],
     ageRange: ageRange,
     gender: gender,
@@ -94,10 +101,10 @@ void main() {
     });
 
     test('copyWith(gender:) 후 gender가 올바르게 업데이트됨', () {
-      final original = _makeProfile(gender: '남성');
-      final updated = original.copyWith(gender: '여성');
+      final original = _makeProfile(gender: GenderType.male);
+      final updated = original.copyWith(gender: GenderType.female);
 
-      expect(updated.gender, equals('여성'));
+      expect(updated.gender, equals(GenderType.female));
       expect(updated.name, equals(original.name));
       expect(updated.interests, equals(original.interests));
       expect(updated.ageRange, equals(original.ageRange));
