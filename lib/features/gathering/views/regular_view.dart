@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/gathering_detail_view_model.dart';
+import '../../chat/views/chat_screen.dart';
 
 class RegularView extends StatelessWidget {
   const RegularView({super.key});
@@ -104,44 +105,51 @@ class RegularView extends StatelessWidget {
                ],
             ),
             const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('최근 채팅', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black87,
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ChatScreen(gatheringTitle: inv.title)),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('최근 채팅', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildChatBubble('흠'),
-                            _buildChatBubble('이해한 것 같아요'),
-                            _buildChatBubble('더 궁금한 점이 있으면 도움말 센터에 문의할게요'),
-                          ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildChatBubble('흠'),
+                              _buildChatBubble('이해한 것 같아요'),
+                              _buildChatBubble('더 궁금한 점이 있으면 도움말 센터에 문의할게요'),
+                            ],
+                          ),
                         ),
-                      ),
-                      const Text('13분 전', style: TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.bold)),
-                    ],
-                  )
-                ],
+                        const Text('13분 전', style: TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.bold)),
+                      ],
+                    )
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),
