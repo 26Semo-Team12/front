@@ -949,22 +949,178 @@ class InvitationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget cardChild;
+
+    switch (invitation.type) {
+      case InvitationType.newInvitation:
+        cardChild = _buildNewInvitation();
+        break;
+      case InvitationType.expired:
+        cardChild = _buildExpiredInvitation();
+        break;
+      case InvitationType.longTerm:
+        cardChild = _buildLongTermInvitation();
+        break;
+    }
+
     return GestureDetector(
       onTap: () => _openDetail(context),
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        clipBehavior: Clip.antiAlias,
-        child: invitation.imageUrl != null
-            ? Image.network(
-                invitation.imageUrl!,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _placeholder(),
-              )
-            : _placeholder(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: cardChild,
+      ),
+    );
+  }
+
+  Widget _buildContentImage() {
+    return invitation.imageUrl != null
+        ? Image.network(
+            invitation.imageUrl!,
+            height: 160,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _placeholder(),
+          )
+        : _placeholder();
+  }
+
+  Widget _buildNewInvitation() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD6706D), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD6706D).withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10.5),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            _buildContentImage(),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpiredInvitation() {
+    return Opacity(
+      opacity: 0.6,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+               ColorFiltered(
+                 colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+                 child: _buildContentImage(),
+               ),
+               Positioned(
+                 top: 12, right: 12,
+                 child: Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                   color: Colors.white70,
+                   child: Text('만료됨', style: TextStyle(color: Colors.grey.shade800, fontSize: 10, fontWeight: FontWeight.bold)),
+                 ),
+               )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLongTermInvitation() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            _buildContentImage(),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 12),
+                    SizedBox(width: 4),
+                    Text('D+12', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Row(
+                children: [
+                  _buildOverlapAvatar(),
+                  _buildOverlapAvatar(),
+                  _buildOverlapAvatar(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverlapAvatar() {
+    return Align(
+      widthFactor: 0.6,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey.shade400,
+          border: Border.all(color: Colors.white, width: 1.5),
+        ),
+        child: const Icon(Icons.person, size: 16, color: Colors.white),
       ),
     );
   }

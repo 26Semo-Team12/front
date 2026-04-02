@@ -3,9 +3,7 @@
 // Feature: home-screen-interactions, Property 9: 초대장 카드 필수 정보 표시
 
 import 'dart:math';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:front/features/home/models/invitation.dart';
 import 'package:front/features/home/views/home_screen_widgets.dart';
 
 // ─────────────────────────────────────────────
@@ -20,31 +18,6 @@ DateTime _randomDateTime(Random rng) {
   final hour = rng.nextInt(24);
   final minute = rng.nextInt(60);
   return DateTime(year, month, day, hour, minute);
-}
-
-/// 비어있지 않은 임의의 문자열 생성
-String _randomNonEmptyString(Random rng, {int maxLength = 20}) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz가나다라마바사아자차카타파하';
-  final length = rng.nextInt(maxLength) + 1;
-  return List.generate(length, (_) => chars[rng.nextInt(chars.length)]).join();
-}
-
-/// 임의의 InvitationType 선택
-InvitationType _randomInvitationType(Random rng) {
-  final values = InvitationType.values;
-  return values[rng.nextInt(values.length)];
-}
-
-/// 임의의 Invitation 생성
-Invitation _randomInvitation(Random rng) {
-  return Invitation(
-    id: 'inv-${rng.nextInt(100000)}',
-    type: _randomInvitationType(rng),
-    title: _randomNonEmptyString(rng, maxLength: 15),
-    dateTime: _randomDateTime(rng),
-    location: _randomNonEmptyString(rng, maxLength: 15),
-    memberCount: rng.nextInt(50) + 1,
-  );
 }
 
 // ─────────────────────────────────────────────
