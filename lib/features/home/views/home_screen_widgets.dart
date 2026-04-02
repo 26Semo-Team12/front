@@ -19,15 +19,6 @@ const List<String> _chosungList = [
   'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ',
   'ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
 ];
-const List<String> _jungsungList = [
-  'ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ',
-  'ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ',
-];
-const List<String> _jongsungList = [
-  '','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ',
-  'ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ',
-  'ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
-];
 
 /// 한글 음절을 [초성, 중성, 종성] 인덱스로 분해. 비한글이면 null.
 ({int cho, int jung, int jong})? _decomposeHangul(String char) {
@@ -290,12 +281,12 @@ class UserProfileCard extends StatelessWidget {
                     ),
 
                   // gender 태그
-                  if (user.gender?.isNotEmpty ?? false)
+                  if (user.gender != null)
                     UserProfileTag(
-                      text: user.gender!,
+                      text: user.gender!.displayName,
                       color: kTagColors[TagType.gender]!,
                       onDelete: () =>
-                          viewModel.removeTag(user.gender!, TagType.gender),
+                          viewModel.removeTag(user.gender!.displayName, TagType.gender),
                       onTap: (ctx) => showDialog(
                         context: ctx,
                         builder: (_) => TagEditDialog(
@@ -304,7 +295,7 @@ class UserProfileCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (!(user.gender?.isNotEmpty ?? false))
+                  if (user.gender == null)
                     _LabeledAddButton(
                       label: '성별 추가',
                       onTap: (ctx) => showDialog(
@@ -523,9 +514,6 @@ class _TagEditDialogState extends State<TagEditDialog> {
 
   // 성별
   String? _selectedGender;
-
-  // 연령
-  int? _selectedAge;
 
   // 관심사 검색
   final TextEditingController _searchController = TextEditingController();
@@ -947,6 +935,14 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
 }
 
 // ─── InvitationCard (이미지만, 탭 시 로딩 → 상세 팝업) ─────────────────────
+
+/// 날짜 포맷 함수 (YYYY년 M월 D일 HH:mm)
+String formatDateTime(DateTime dt) {
+  final hour = dt.hour.toString().padLeft(2, '0');
+  final minute = dt.minute.toString().padLeft(2, '0');
+  return '${dt.year}년 ${dt.month}월 ${dt.day}일 $hour:$minute';
+}
+
 class InvitationCard extends StatelessWidget {
   final Invitation invitation;
   const InvitationCard({super.key, required this.invitation});

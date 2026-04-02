@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 import 'package:front/core/models/user_profile.dart';
 import 'package:front/core/services/mock_api_service.dart';
 import 'package:front/features/home/viewmodels/home_view_model.dart';
+import 'package:front/core/models/enums.dart';
 import 'package:front/features/home/models/invitation.dart';
 
 // ─────────────────────────────────────────────
@@ -111,12 +112,12 @@ void main() {
       // Validates: Requirements 3.2
       for (int i = 0; i < 100; i++) {
         final service = MockApiService();
-        final gender = _randomNonEmptyString(random, maxLength: 5);
+        final gender = GenderType.male;
         await service.patchMe(gender: gender);
 
         final vm = await _createViewModel(service);
 
-        vm.removeTag(gender, TagType.gender);
+        vm.removeTag(gender.displayName, TagType.gender);
 
         expect(
           vm.currentUser!.gender,
@@ -177,14 +178,14 @@ void main() {
       for (int i = 0; i < 100; i++) {
         final service = MockApiService();
         final vm = await _createViewModel(service);
-        final newGender = _randomNonEmptyString(random, maxLength: 5);
+        final newGender = GenderType.female;
 
-        await vm.addTag(newGender, TagType.gender);
+        await vm.addTag(newGender.displayName, TagType.gender);
 
         expect(
           vm.currentUser!.gender,
-          equals(newGender.trim()),
-          reason: 'iteration=$i: addTag("$newGender", gender) 후 gender가 일치해야 함',
+          equals(newGender),
+          reason: 'iteration=$i: addTag("${newGender.displayName}", gender) 후 gender가 일치해야 함',
         );
 
         vm.dispose();
@@ -264,6 +265,12 @@ void main() {
         final vm = await _createViewModel(service);
         final filterType = _randomInvitationType(random);
 
+        // _activeFilters를 명시적으로 클리어하고 타겟만 추가
+        for (var t in InvitationType.values) {
+          if (vm.activeFilters.contains(t)) {
+             vm.toggleFilter(t);
+          }
+        }
         vm.toggleFilter(filterType);
 
         final filtered = vm.filteredInvitations;
@@ -312,20 +319,19 @@ void main() {
       }
     });
 
-    test('초기 상태(필터 없음)에서 filteredInvitations는 전체 목록 반환', () async {
+    test('초기 상태에서 filteredInvitations는 활성화된 필터에 해당하는 목록 반환', () async {
       // Validates: Requirements 6.4
       final service = MockApiService();
       final vm = await _createViewModel(service);
 
-      expect(vm.activeFilter, isNull);
-
       final allInvitations = vm.filteredInvitations;
       final allFromService = await service.getInvitations();
+      final expectedCount = allFromService.where((i) => vm.activeFilters.contains(i.type)).length;
 
       expect(
         allInvitations.length,
-        equals(allFromService.length),
-        reason: '필터 없을 때 filteredInvitations는 전체 목록을 반환해야 함',
+        equals(expectedCount),
+        reason: '초기 상태의 필터 설정에 따른 길이가 반환되어야 함',
       );
 
       vm.dispose();

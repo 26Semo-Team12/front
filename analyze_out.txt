@@ -1,0 +1,29 @@
+Analyzing front...                                              
+
+   info - The private field _activeFilters could be 'final' - lib\features\home\viewmodels\home_view_model.dart:16:23 - prefer_final_fields
+   info - Statements in an if should be enclosed in a block - lib\features\home\viewmodels\home_view_model.dart:107:26 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\features\home\viewmodels\home_view_model.dart:108:31 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\features\home\viewmodels\home_view_model.dart:109:14 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\features\home\views\ai_mc_screen.dart:58:39 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of multiple underscores - lib\features\home\views\ai_mc_screen.dart:87:38 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\home\views\home_screen.dart:54:36 - unnecessary_underscores
+warning - The declaration '_jungsungList' isn't referenced - lib\features\home\views\home_screen_widgets.dart:22:20 - unused_element
+warning - The declaration '_jongsungList' isn't referenced - lib\features\home\views\home_screen_widgets.dart:26:20 - unused_element
+warning - The value of the field '_selectedAge' isn't used - lib\features\home\views\home_screen_widgets.dart:528:8 - unused_field
+   info - Unnecessary use of multiple underscores - lib\features\home\views\home_screen_widgets.dart:969:35 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\home\views\home_screen_widgets.dart:969:39 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\home\views\home_screen_widgets.dart:1091:37 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\home\views\home_screen_widgets.dart:1091:41 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\splash\views\splash_screen.dart:53:28 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\splash\views\splash_screen.dart:53:32 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\splash\views\splash_screen.dart:54:46 - unnecessary_underscores
+   info - The import of 'dart:math' is unnecessary because all of the used elements are also provided by the import of 'package:glados/glados.dart' - test\core\models\user_profile_test.dart:5:8 - unnecessary_import
+   info - The import of 'package:test/test.dart' is unnecessary because all of the used elements are also provided by the import of 'package:glados/glados.dart' - test\core\models\user_profile_test.dart:7:8 - unnecessary_import
+   info - The import of 'dart:math' is unnecessary because all of the used elements are also provided by the import of 'package:glados/glados.dart' - test\features\home\viewmodels\home_view_model_test.dart:5:8 - unnecessary_import
+   info - The import of 'package:test/test.dart' is unnecessary because all of the used elements are also provided by the import of 'package:glados/glados.dart' - test\features\home\viewmodels\home_view_model_test.dart:7:8 - unnecessary_import
+  error - The function 'formatDateTime' isn't defined - test\features\home\views\invitation_card_test.dart:67:24 - undefined_function
+  error - The function 'formatDateTime' isn't defined - test\features\home\views\invitation_card_test.dart:118:22 - undefined_function
+  error - The function 'formatDateTime' isn't defined - test\features\home\views\invitation_card_test.dart:125:22 - undefined_function
+  error - The function 'formatDateTime' isn't defined - test\features\home\views\invitation_card_test.dart:132:22 - undefined_function
+  error - The function 'formatDateTime' isn't defined - test\features\home\views\invitation_card_test.dart:227:28 - undefined_function
+

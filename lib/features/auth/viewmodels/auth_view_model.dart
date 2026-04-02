@@ -1,12 +1,15 @@
 // lib/features/auth/viewmodels/auth_view_model.dart
 
 import 'package:flutter/foundation.dart';
+import '../services/auth_service.dart';
 
 /// 로그인/회원가입 화면의 비즈니스 로직 ViewModel
 /// - 이메일 입력 상태 관리
 /// - 유효성 검사
 /// - Mock 로그인 처리
 class AuthViewModel extends ChangeNotifier {
+  final AuthService _authService = AuthService();
+
   String _email = '';
   String? _emailError;
   bool _isLoading = false;
@@ -54,13 +57,15 @@ class AuthViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Mock API 호출 (0.8초 딜레이)
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    _isLoading = false;
-    notifyListeners();
-
-    onSuccess();
+    try {
+      await _authService.signInWithEmail(_email.trim());
+      onSuccess();
+    } catch (e) {
+      _emailError = '로그인에 실패했습니다: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Google 로그인 (Mock)
