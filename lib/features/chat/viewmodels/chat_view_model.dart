@@ -34,15 +34,16 @@ class ChatViewModel extends ChangeNotifier {
     "최근에 갔던 맛집 공유해요! ✨",
   ];
 
-  void sendMessage(String text) {
+  void sendMessage(String text, {ChatMessageType type = ChatMessageType.text, bool isMe = true}) {
     if (text.trim().isEmpty) return;
 
     final newMessage = ChatMessage(
       id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-      senderName: '나',
+      senderName: isMe ? '나' : '시스템',
       text: text,
       timestamp: DateTime.now(),
-      isMe: true,
+      type: type,
+      isMe: isMe,
     );
     _messages.add(newMessage);
     notifyListeners();

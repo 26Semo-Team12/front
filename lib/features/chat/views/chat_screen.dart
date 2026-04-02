@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/chat_message.dart';
 import '../viewmodels/chat_view_model.dart';
+import 'widgets/ladder_game_dialog.dart';
 
 class ChatScreen extends StatelessWidget {
   final String gatheringTitle;
@@ -78,6 +81,45 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
 
   Widget _buildMessageBubble(ChatMessage msg) {
     bool isMe = msg.isMe;
+
+    if (msg.type == ChatMessageType.system) {
+      return Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(msg.text, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+        ),
+      );
+    }
+    
+    if (msg.type == ChatMessageType.aiIcebreaking) {
+      return Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD6706D).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFD6706D), width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.auto_awesome, color: Color(0xFFD6706D), size: 18),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(msg.text, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD6706D))),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -150,13 +192,18 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
 
   Widget _buildInputArea(ChatViewModel viewModel) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade300)),
       ),
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.black54),
+            onPressed: () => _showAttachmentMenu(context),
+          ),
+          const SizedBox(width: 4),
           Expanded(
             child: TextField(
               controller: _textController,
@@ -188,4 +235,125 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
       ),
     );
   }
+
+  void _showAttachmentMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 24, bottom: 40, left: 24, right: 24),
+          child: Wrap(
+            spacing: 32,
+            runSpacing: 24,
+            alignment: WrapAlignment.center,
+            children: [
+              _buildAttachItem(ctx, Icons.image, '사진', () => _pickImage(ctx)),
+              _buildAttachItem(ctx, Icons.videocam, '동영상', () => _pickVideo(ctx)),
+              _buildAttachItem(ctx, Icons.attach_file, '파일', () => _pickFile(ctx)),
+              _buildAttachItem(ctx, Icons.calendar_today, '일정', () => _pickSchedule(ctx)),
+              _buildAttachItem(ctx, Icons.casino, '사다리타기', () => _playMinigame(ctx)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAttachItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD6706D).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: const Color(0xFFD6706D), size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+        ],
+      ),
+    );
+  }
+
+  void _pickImage(BuildContext ctx) async {
+    Navigator.pop(ctx);
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null && mounted) {
+      final viewModel = context.read<ChatViewModel>();
+      viewModel.sendMessage('[사진 전송됨: ${pickedFile.name}]', type: ChatMessageType.system, isMe: true);
+    }
+  }
+
+  void _pickVideo(BuildContext ctx) async {
+    Navigator.pop(ctx);
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+    if (pickedFile != null && mounted) {
+      final viewModel = context.read<ChatViewModel>();
+      viewModel.sendMessage('[동영상 전송됨: ${pickedFile.name}]', type: ChatMessageType.system, isMe: true);
+    }
+  }
+
+  void _pickFile(BuildContext ctx) async {
+    Navigator.pop(ctx);
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null && mounted) {
+      final viewModel = context.read<ChatViewModel>();
+      viewModel.sendMessage('[파일 전송됨: ${result.files.single.name}]', type: ChatMessageType.system, isMe: true);
+    }
+  }
+
+  void _pickSchedule(BuildContext ctx) async {
+    Navigator.pop(ctx);
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null && mounted) {
+      TimeOfDay? time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (time != null && mounted) {
+        final viewModel = context.read<ChatViewModel>();
+        final y = date.year;
+        final m = date.month.toString().padLeft(2, '0');
+        final d = date.day.toString().padLeft(2, '0');
+        final h = time.hour.toString().padLeft(2, '0');
+        final min = time.minute.toString().padLeft(2, '0');
+        
+        viewModel.sendMessage('📅 새로운 일정이 제안되었습니다: $y년 $m월 $d일 $h:$min', type: ChatMessageType.system, isMe: false);
+        // TODO: 일정 생성/투표 화면으로 네비게이션 트리거 연동 필요
+      }
+    }
+  }
+
+  void _playMinigame(BuildContext ctx) {
+    Navigator.pop(ctx);
+    showDialog(
+      context: context,
+      builder: (_) {
+        return LadderGameDialog(
+          onResultSelected: (resultString) {
+            final viewModel = context.read<ChatViewModel>();
+            viewModel.sendMessage(resultString, type: ChatMessageType.aiIcebreaking, isMe: false);
+          },
+        );
+      },
+    );
+  }
 }
+
