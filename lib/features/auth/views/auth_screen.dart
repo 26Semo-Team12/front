@@ -28,284 +28,85 @@ class _AuthScreenContent extends StatefulWidget {
 class _AuthScreenContentState extends State<_AuthScreenContent> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmFocus = FocusNode();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _confirmController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
   void _onAuthSuccess(bool isSignup) {
     if (!mounted) return;
-    if (isSignup) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        (route) => false,
-      );
-    } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
-    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => isSignup ? const OnboardingScreen() : const HomeScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<AuthViewModel>();
+    final vm = context.watch<AuthViewModel>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 60),
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 60),
+                const _Logo(),
+                const SizedBox(height: 48),
 
-              // ── 빨간색 "Venture" 스크립트 로고 ──
-              const _VentureScriptLogo(),
-              const SizedBox(height: 36),
-
-              // ── 타이틀 "계정 만들기" ──
-              const Text(
-                '계정 만들기',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                // 이메일 단계
+                _EmailStep(
+                  controller: _emailController,
+                  focusNode: _emailFocus,
+                  vm: vm,
                 ),
-              ),
-              const SizedBox(height: 10),
 
-              // ── 설명 텍스트 ──
-              const Text(
-                '이 앱에 가입하려면 이메일을 입력하세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // ── 이메일 입력란 ──
-              TextFormField(
-                controller: _emailController,
-                readOnly: viewModel.isEmailSubmitted,
-                keyboardType: TextInputType.emailAddress,
-                onChanged: viewModel.updateEmail,
-                style: TextStyle(
-                  color: viewModel.isEmailSubmitted ? Colors.grey.shade600 : Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  fillColor: viewModel.isEmailSubmitted ? Colors.grey.shade100 : Colors.white,
-                  filled: viewModel.isEmailSubmitted,
-                  hintText: 'email@domain.com',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 15,
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFD6706D), width: 1.5),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.redAccent),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-                  ),
-                  errorText: viewModel.emailError,
-                ),
-              ),
-              if (viewModel.isEmailSubmitted) ...[
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  onChanged: viewModel.updatePassword,
-                  decoration: InputDecoration(
-                    hintText: '비밀번호',
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 15,
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFD6706D), width: 1.5),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.redAccent),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-                    ),
-                    errorText: viewModel.passwordError,
-                  ),
-                ),
-                
-                if (!viewModel.isExistingUser) ...[
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: true,
-                    onChanged: viewModel.updateConfirmPassword,
-                    decoration: InputDecoration(
-                      hintText: '비밀번호 확인',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 15,
-                      ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFD6706D), width: 1.5),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-
-              const SizedBox(height: 20),
-
-              // ── '계속' 버튼 ──
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: viewModel.isLoading
-                      ? null
-                      : () =>
-                          viewModel.onContinuePressed(_onAuthSuccess),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    disabledBackgroundColor: Colors.grey.shade400,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: viewModel.isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          !viewModel.isEmailSubmitted
-                              ? '계속'
-                              : viewModel.isExistingUser
-                                  ? '로그인'
-                                  : '가입하기',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                // 비밀번호 / 회원가입 단계 (애니메이션으로 등장)
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOutCubic,
+                  child: vm.step == AuthStep.email
+                      ? const SizedBox.shrink()
+                      : _PasswordStep(
+                          passwordController: _passwordController,
+                          confirmController: _confirmController,
+                          passwordFocus: _passwordFocus,
+                          confirmFocus: _confirmFocus,
+                          vm: vm,
+                          onSuccess: _onAuthSuccess,
                         ),
                 ),
-              ),
-              const SizedBox(height: 28),
 
-              // ── '또는' 구분선 ──
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      '또는',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                ],
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // ── Google 로그인 버튼 ──
-              _SocialLoginButton(
-                onTap: (viewModel.isLoading || viewModel.isEmailSubmitted)
-                    ? null
-                    : () => viewModel.onGoogleSignIn(_onAuthSuccess),
-                icon: _GoogleIcon(),
-                label: 'Google 계정으로 계속하기',
-              ),
-              const SizedBox(height: 32),
+                // 메인 버튼
+                _MainButton(vm: vm, onSuccess: _onAuthSuccess),
 
-              // ── 이용약관 안내 텍스트 ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text.rich(
-                  TextSpan(
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                      height: 1.6,
-                    ),
-                    children: [
-                      const TextSpan(text: '계속을 클릭하면 당사의 '),
-                      const TextSpan(
-                        text: '서비스 이용 약관',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const TextSpan(text: ' 및 '),
-                      const TextSpan(
-                        text: '개인정보 처리방침',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const TextSpan(text: '에\n동의하는 것으로 간주됩니다.'),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+
+                // 이용약관
+                _TermsText(),
+
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
@@ -313,62 +114,182 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
   }
 }
 
-// ────────────────────────────────────────────
-//  하위 위젯들
-// ────────────────────────────────────────────
-
-/// 빨간색 "Venture" 스크립트 로고 (logo_2.png 이미지 사용)
-class _VentureScriptLogo extends StatelessWidget {
-  const _VentureScriptLogo();
+// ── 로고 ──────────────────────────────────────────────────────────────────────
+class _Logo extends StatelessWidget {
+  const _Logo();
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/logo_2.png',
-      height: 60,
-      fit: BoxFit.contain,
-    );
+    return Image.asset('assets/images/logo_2.png', height: 60, fit: BoxFit.contain);
   }
 }
 
-/// 소셜 로그인 버튼 (아웃라인 스타일)
-class _SocialLoginButton extends StatelessWidget {
-  final VoidCallback? onTap;
-  final Widget icon;
-  final String label;
+// ── 이메일 입력 단계 ──────────────────────────────────────────────────────────
+class _EmailStep extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final AuthViewModel vm;
 
-  const _SocialLoginButton({
-    required this.onTap,
-    required this.icon,
-    required this.label,
+  const _EmailStep({
+    required this.controller,
+    required this.focusNode,
+    required this.vm,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.grey.shade300),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    final submitted = vm.step != AuthStep.email;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(
+            submitted
+                ? (vm.step == AuthStep.password ? '다시 만나서 반가워요 👋' : '처음 오셨군요!')
+                : '시작하기',
+            key: ValueKey(vm.step),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          foregroundColor: Colors.black87,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        const SizedBox(height: 8),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(
+            submitted
+                ? (vm.step == AuthStep.password ? '비밀번호를 입력해 주세요.' : '비밀번호를 설정해 주세요.')
+                : '이메일을 입력해 주세요.',
+            key: ValueKey('sub_${vm.step}'),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+        ),
+        const SizedBox(height: 24),
+        _InputField(
+          controller: controller,
+          focusNode: focusNode,
+          hint: 'email@domain.com',
+          readOnly: submitted,
+          keyboardType: TextInputType.emailAddress,
+          onChanged: vm.updateEmail,
+          errorText: vm.emailError,
+          suffix: submitted
+              ? GestureDetector(
+                  onTap: () {
+                    vm.goBackToEmail();
+                    controller.clear();
+                  },
+                  child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFD6706D)),
+                )
+              : null,
+        ),
+      ],
+    );
+  }
+}
+
+// ── 비밀번호 단계 (AnimatedSize로 펼쳐짐) ─────────────────────────────────────
+class _PasswordStep extends StatefulWidget {
+  final TextEditingController passwordController;
+  final TextEditingController confirmController;
+  final FocusNode passwordFocus;
+  final FocusNode confirmFocus;
+  final AuthViewModel vm;
+  final void Function(bool) onSuccess;
+
+  const _PasswordStep({
+    required this.passwordController,
+    required this.confirmController,
+    required this.passwordFocus,
+    required this.confirmFocus,
+    required this.vm,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_PasswordStep> createState() => _PasswordStepState();
+}
+
+class _PasswordStepState extends State<_PasswordStep>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 400));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.forward();
+    // 자동 포커스
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.passwordFocus.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSignup = widget.vm.step == AuthStep.signup;
+
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Column(
           children: [
-            icon,
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
+            const SizedBox(height: 16),
+            _InputField(
+              controller: widget.passwordController,
+              focusNode: widget.passwordFocus,
+              hint: '비밀번호',
+              obscureText: widget.vm.obscurePassword,
+              onChanged: widget.vm.updatePassword,
+              errorText: widget.vm.passwordError,
+              suffix: GestureDetector(
+                onTap: widget.vm.toggleObscurePassword,
+                child: Icon(
+                  widget.vm.obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 20,
+                  color: Colors.grey,
+                ),
               ),
+              onSubmitted: isSignup
+                  ? (_) => widget.confirmFocus.requestFocus()
+                  : (_) => widget.vm.submitPassword(widget.onSuccess),
             ),
+            if (isSignup) ...[
+              const SizedBox(height: 14),
+              _InputField(
+                controller: widget.confirmController,
+                focusNode: widget.confirmFocus,
+                hint: '비밀번호 확인',
+                obscureText: widget.vm.obscureConfirm,
+                onChanged: widget.vm.updateConfirmPassword,
+                suffix: GestureDetector(
+                  onTap: widget.vm.toggleObscureConfirm,
+                  child: Icon(
+                    widget.vm.obscureConfirm
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                    color: Colors.grey,
+                  ),
+                ),
+                onSubmitted: (_) => widget.vm.submitPassword(widget.onSuccess),
+              ),
+            ],
           ],
         ),
       ),
@@ -376,81 +297,163 @@ class _SocialLoginButton extends StatelessWidget {
   }
 }
 
-/// Google 'G' 아이콘 — 4색 G를 CustomPaint로 렌더링
-class _GoogleIcon extends StatelessWidget {
+// ── 메인 버튼 ─────────────────────────────────────────────────────────────────
+class _MainButton extends StatelessWidget {
+  final AuthViewModel vm;
+  final void Function(bool) onSuccess;
+
+  const _MainButton({required this.vm, required this.onSuccess});
+
   @override
   Widget build(BuildContext context) {
+    final label = switch (vm.step) {
+      AuthStep.email => '계속',
+      AuthStep.password => '로그인',
+      AuthStep.signup => '가입하기',
+    };
+
     return SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(painter: _GoogleLogoPainter()),
+      width: double.infinity,
+      height: 52,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: ElevatedButton(
+          key: ValueKey(vm.step),
+          onPressed: vm.isLoading
+              ? null
+              : () {
+                  if (vm.step == AuthStep.email) {
+                    vm.submitEmail();
+                  } else {
+                    vm.submitPassword(onSuccess);
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD6706D),
+            disabledBackgroundColor: Colors.grey.shade300,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 0,
+          ),
+          child: vm.isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                )
+              : Text(label,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ),
+      ),
     );
   }
 }
 
-class _GoogleLogoPainter extends CustomPainter {
+// ── 공통 입력 필드 ────────────────────────────────────────────────────────────
+class _InputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String hint;
+  final bool readOnly;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final String? errorText;
+  final Widget? suffix;
+
+  const _InputField({
+    required this.controller,
+    this.focusNode,
+    required this.hint,
+    this.readOnly = false,
+    this.obscureText = false,
+    this.keyboardType,
+    this.onChanged,
+    this.onSubmitted,
+    this.errorText,
+    this.suffix,
+  });
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-    final center = Offset(w / 2, h / 2);
-    final radius = w / 2;
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.18
-      ..strokeCap = StrokeCap.butt;
-
-    // 파란 (우측 아크) — 330° → 60°
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.72),
-      -0.52, // ≈ -30°
-      1.57, // ≈ 90°
-      false,
-      paint,
-    );
-
-    // 초록 (하단 아크)
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.72),
-      1.05, // ≈ 60°
-      1.57,
-      false,
-      paint,
-    );
-
-    // 노랑 (좌하단 아크)
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.72),
-      2.62, // ≈ 150°
-      1.05,
-      false,
-      paint,
-    );
-
-    // 빨강 (좌상단 아크)
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.72),
-      3.67, // ≈ 210°
-      1.57,
-      false,
-      paint,
-    );
-
-    // 중앙 가로 바 (파란색)
-    final barPaint = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTWH(w * 0.5, h * 0.4, w * 0.38, h * 0.2),
-      barPaint,
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      readOnly: readOnly,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
+      onFieldSubmitted: onSubmitted,
+      style: TextStyle(
+        color: readOnly
+            ? Colors.grey.shade500
+            : Theme.of(context).colorScheme.onSurface,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+        filled: true,
+        fillColor: readOnly
+            ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100)
+            : (isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade50),
+        suffixIcon: suffix != null
+            ? Padding(padding: const EdgeInsets.only(right: 12), child: suffix)
+            : null,
+        suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+              color: isDark ? Colors.white12 : Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFD6706D), width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.redAccent),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
+        errorText: errorText,
+      ),
     );
   }
+}
 
+// ── 이용약관 ──────────────────────────────────────────────────────────────────
+class _TermsText extends StatelessWidget {
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text.rich(
+        TextSpan(
+          style: TextStyle(
+              fontSize: 12, color: Colors.grey.shade500, height: 1.6),
+          children: const [
+            TextSpan(text: '계속하면 '),
+            TextSpan(
+                text: '서비스 이용약관',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(text: ' 및 '),
+            TextSpan(
+                text: '개인정보 처리방침',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(text: '에 동의하는 것으로 간주됩니다.'),
+          ],
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 }
