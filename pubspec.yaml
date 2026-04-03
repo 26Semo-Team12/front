@@ -37,6 +37,7 @@ dependencies:
   provider: ^6.1.5+1
   url_launcher: ^6.3.1
   video_player: ^2.9.2
+  visibility_detector: ^0.4.0+2
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
 
@@ -67,6 +68,12 @@ flutter:
   assets:
     - assets/images/
     - assets/images/왁스_실링_종이_열림_영상.mp4
+
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-1.3.9/public/static/Pretendard-Medium.otf
+          weight: 500
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

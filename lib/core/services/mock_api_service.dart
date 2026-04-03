@@ -59,7 +59,7 @@ class MockApiService {
       Invitation(
         id: 'inv-001',
         type: InvitationType.newInvitation,
-        title: '주말 등산 모임',
+        title: 'Hiking',
         dateTime: DateTime(2025, 8, 10, 9, 0),
         location: '북한산 국립공원',
         imageUrl: 'https://picsum.photos/seed/hiking/400/200',
@@ -68,7 +68,7 @@ class MockApiService {
       Invitation(
         id: 'inv-002',
         type: InvitationType.newInvitation,
-        title: '독서 클럽 정기 모임',
+        title: 'Book Club Meeting',
         dateTime: DateTime(2025, 8, 15, 14, 0),
         location: '강남구 카페 북스',
         imageUrl: 'https://picsum.photos/seed/books/400/200',
@@ -77,7 +77,7 @@ class MockApiService {
       Invitation(
         id: 'inv-003',
         type: InvitationType.longTerm,
-        title: '매주 수요일 요리 스터디',
+        title: 'Cooking Study',
         dateTime: DateTime(2025, 8, 20, 18, 30),
         location: '마포구 쿠킹 스튜디오',
         imageUrl: 'https://picsum.photos/seed/cooking/400/200',
@@ -86,7 +86,7 @@ class MockApiService {
       Invitation(
         id: 'inv-004',
         type: InvitationType.longTerm,
-        title: '월간 사진 동호회',
+        title: 'Photo Club',
         dateTime: DateTime(2025, 9, 1, 10, 0),
         location: '서울숲',
         imageUrl: null,
@@ -95,7 +95,7 @@ class MockApiService {
       Invitation(
         id: 'inv-005',
         type: InvitationType.expired,
-        title: '봄 소풍 피크닉',
+        title: 'Picnic',
         dateTime: DateTime(2025, 4, 5, 11, 0),
         location: '한강공원 여의도',
         imageUrl: 'https://picsum.photos/seed/picnic/400/200',
@@ -104,7 +104,7 @@ class MockApiService {
       Invitation(
         id: 'inv-006',
         type: InvitationType.expired,
-        title: '신년 맞이 번개 모임',
+        title: 'Meetup',
         dateTime: DateTime(2025, 1, 3, 19, 0),
         location: '홍대 루프탑 바',
         imageUrl: null,
@@ -113,7 +113,7 @@ class MockApiService {
       Invitation(
         id: 'inv-007',
         type: InvitationType.newInvitation,
-        title: '주말 보드게임 모임',
+        title: 'Board Game',
         dateTime: DateTime(2025, 9, 6, 14, 0),
         location: '강남구 보드게임 카페',
         imageUrl: 'https://picsum.photos/seed/boardgame/400/200',
@@ -122,7 +122,7 @@ class MockApiService {
       Invitation(
         id: 'inv-008',
         type: InvitationType.longTerm,
-        title: '매월 첫째 주 독서 모임',
+        title: 'Book Club',
         dateTime: DateTime(2025, 9, 7, 15, 0),
         location: '마포구 공공도서관',
         imageUrl: 'https://picsum.photos/seed/library/400/200',
@@ -131,7 +131,7 @@ class MockApiService {
       Invitation(
         id: 'inv-009',
         type: InvitationType.newInvitation,
-        title: '한강 자전거 라이딩',
+        title: 'Cinephile',
         dateTime: DateTime(2025, 9, 13, 8, 0),
         location: '여의도 한강공원',
         imageUrl: 'https://picsum.photos/seed/cycling/400/200',

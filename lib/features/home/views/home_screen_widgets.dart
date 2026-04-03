@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'in_app_map_screen.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
@@ -877,14 +877,17 @@ class _AnimatedInvitationListState extends State<_AnimatedInvitationList> {
     // 정렬: type 순서 유지
     _all.sort((a, b) => a.type.index.compareTo(b.type.index));
     return Column(
-      children: _all.map((inv) {
+      children: List.generate(_all.length, (index) {
+        final inv = _all[index];
         final visible = _visibleIds.contains(inv.id);
         return _FadeSlideItem(
           key: ValueKey(inv.id),
           visible: visible,
-          child: InvitationCard(invitation: inv),
+          child: index >= 2
+              ? _VisibilityFadeCard(invitation: inv)
+              : InvitationCard(invitation: inv),
         );
-      }).toList(),
+      }),
     );
   }
 }
@@ -947,10 +950,71 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
   }
 }
 
+// ─── 스크롤 시 투명도 전환 카드 ──────────────────────────────────────────────
+class _VisibilityFadeCard extends StatefulWidget {
+  final Invitation invitation;
+  const _VisibilityFadeCard({required this.invitation});
+
+  @override
+  State<_VisibilityFadeCard> createState() => _VisibilityFadeCardState();
+}
+
+class _VisibilityFadeCardState extends State<_VisibilityFadeCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+      value: 0.5,
+    );
+    _opacity = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key('card_${widget.invitation.id}'),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction >= 1.0) {
+          _ctrl.forward();
+        } else {
+          _ctrl.reverse();
+        }
+      },
+      child: AnimatedBuilder(
+        animation: _opacity,
+        builder: (_, child) => Opacity(
+          opacity: _opacity.value,
+          child: child,
+        ),
+        child: InvitationCard(invitation: widget.invitation),
+      ),
+    );
+  }
+}
+
 // ─── InvitationCard (이미지만, 탭 시 로딩 → 상세 팝업) ─────────────────────
 class InvitationCard extends StatelessWidget {
   final Invitation invitation;
   const InvitationCard({super.key, required this.invitation});
+
+  String get _heroTag => 'invitation_${invitation.id}';
+  String get _assetPath => invitation.type == InvitationType.expired
+      ? 'assets/images/만료된 초대장 이미지.png'
+      : 'assets/images/편지지 시연.png';
 
   @override
   Widget build(BuildContext context) {
@@ -959,26 +1023,63 @@ class InvitationCard extends StatelessWidget {
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         clipBehavior: Clip.antiAlias,
-        child: invitation.imageUrl != null
-            ? Image.network(
-                invitation.imageUrl!,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _placeholder(),
-              )
-            : _placeholder(),
+        child: Stack(
+          children: [
+            Hero(
+              tag: _heroTag,
+              child: Transform.scale(
+                scale: 1.05,
+                child: Image.asset(
+                  _assetPath,
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(1.0, 0.0),
+                ),
+              ),
+            ),
+            if (invitation.type == InvitationType.newInvitation ||
+                invitation.type == InvitationType.longTerm ||
+                invitation.type == InvitationType.expired)
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: Text(
+                  invitation.title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 18,
+                    color: invitation.type == InvitationType.expired
+                        ? const Color(0xFF6A6A6A)
+                        : const Color(0xFF3A3A3A),
+                    letterSpacing: 2.0,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   void _openDetail(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (_) => _InvitationDetailDialog(invitation: invitation),
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.7),
+        barrierDismissible: true,
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (_, __, ___) => _InvitationHeroTransitionPage(
+          invitation: invitation,
+          heroTag: _heroTag,
+          assetPath: _assetPath,
+        ),
+      ),
     );
   }
 
@@ -995,6 +1096,58 @@ class InvitationCard extends StatelessWidget {
       );
 }
 
+// ─── Hero 전환 중간 페이지 ────────────────────────────────────────────────────
+class _InvitationHeroTransitionPage extends StatefulWidget {
+  final Invitation invitation;
+  final String heroTag;
+  final String assetPath;
+  const _InvitationHeroTransitionPage({
+    required this.invitation,
+    required this.heroTag,
+    required this.assetPath,
+  });
+
+  @override
+  State<_InvitationHeroTransitionPage> createState() =>
+      _InvitationHeroTransitionPageState();
+}
+
+class _InvitationHeroTransitionPageState
+    extends State<_InvitationHeroTransitionPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 450), () {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            opaque: false,
+            barrierColor: Colors.black.withValues(alpha: 0.7),
+            barrierDismissible: true,
+            pageBuilder: (_, __, ___) =>
+                _InvitationDetailDialog(invitation: widget.invitation),
+          ),
+        );
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: Hero(
+          tag: widget.heroTag,
+          child: Image.asset(widget.assetPath, fit: BoxFit.contain),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── 초대장 상세 팝업 ────────────────────────────────────────────────────────
 class _InvitationDetailDialog extends StatefulWidget {
   final Invitation invitation;
@@ -1006,46 +1159,6 @@ class _InvitationDetailDialog extends StatefulWidget {
 }
 
 class _InvitationDetailDialogState extends State<_InvitationDetailDialog> {
-  bool _loading = true;
-  late final VideoPlayerController _videoController;
-
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.networkUrl(
-      Uri.parse('assets/images/왁스_실링_종이_열림_영상.mp4'),
-    );
-    _initVideo();
-  }
-
-  Future<void> _initVideo() async {
-    try {
-      await _videoController.initialize();
-      if (!mounted) return;
-      _videoController.addListener(_onVideoUpdate);
-      setState(() {});
-      await _videoController.play();
-    } catch (e) {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  void _onVideoUpdate() {
-    if (!mounted) return;
-    final val = _videoController.value;
-    if (val.duration > Duration.zero &&
-        val.position > const Duration(milliseconds: 300) &&
-        val.position >= val.duration - const Duration(milliseconds: 200)) {
-      _videoController.removeListener(_onVideoUpdate);
-      setState(() => _loading = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _videoController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1053,30 +1166,9 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
-          child: _loading ? _buildLoader() : _buildDetail(),
-        ),
+        borderRadius: BorderRadius.circular(0),
+        child: _buildDetail(),
       ),
-    );
-  }
-
-  Widget _buildLoader() {
-    return Container(
-      key: const ValueKey('loader'),
-      color: Colors.black,
-      child: _videoController.value.isInitialized
-          ? AspectRatio(
-              aspectRatio: _videoController.value.aspectRatio,
-              child: VideoPlayer(_videoController),
-            )
-          : const SizedBox(
-              height: 520,
-              child: Center(
-                child: CircularProgressIndicator(color: Colors.white54),
-              ),
-            ),
     );
   }
 
@@ -1089,6 +1181,15 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog> {
         SizedBox(
           width: double.infinity,
           child: Image.asset(
+            inv.id == 'inv-001' ? 'assets/images/hiking.png' :
+            inv.id == 'inv-002' ? 'assets/images/book club meeting.png' :
+            inv.id == 'inv-003' ? 'assets/images/cooking study.png' :
+            inv.id == 'inv-004' ? 'assets/images/photo club.png' :
+            inv.id == 'inv-005' ? 'assets/images/picnic.png' :
+            inv.id == 'inv-006' ? 'assets/images/meetup.png' :
+            inv.id == 'inv-007' ? 'assets/images/board game.png' :
+            inv.id == 'inv-008' ? 'assets/images/book club.png' :
+            inv.id == 'inv-009' ? 'assets/images/cinephile.png' :
             'assets/images/초대장 이미지.png',
             fit: BoxFit.contain,
           ),
@@ -1111,29 +1212,6 @@ class _InvitationDetailDialogState extends State<_InvitationDetailDialog> {
           top: 8,
           left: 8,
           child: _MapButton(location: inv.location),
-        ),
-        // 하단 정보 (준비 중)
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.75),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: const Text(
-              '상세 정보 준비 중입니다.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ),
         ),
       ],
     );
@@ -1177,3 +1255,5 @@ class _MapButton extends StatelessWidget {
     );
   }
 }
+
+
