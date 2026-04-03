@@ -54,7 +54,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             _HomeScrollView(),
           if (_showAiMcButton)
             Positioned(
-              left: 8, right: 8, bottom: 20,
+              left: 8,
+              right: 8,
+              bottom: MediaQuery.of(context).padding.bottom + 16,
               child: GestureDetector(
                 onTap: () => Navigator.push(
                   context,

@@ -49,6 +49,13 @@ class _ChatScreenContent extends StatefulWidget {
 
 class _ChatScreenContentState extends State<_ChatScreenContent> {
   final TextEditingController _textController = TextEditingController();
+  ChatViewModel? _viewModel;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _viewModel ??= context.read<ChatViewModel>();
+  }
 
   @override
   void initState() {
@@ -61,25 +68,29 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
   Future<void> _initializeChat() async {
     final viewModel = context.read<ChatViewModel>();
     
-    // 1. Get current userId (Mock for now, should come from AuthService/ApiClient)
-    // Actually, I'll just use a fixed ID for testing if I can't find it easily.
-    // In a real app, we'd get this from the session.
-    final userIdRes = await ApiClient().get('/auth/me');
-    final userId = userIdRes['data']['id'] as int;
-
-    viewModel.initSocket(userId);
+    try {
+      final userIdRes = await ApiClient().get('/auth/me');
+      final userId = userIdRes['data']['id'] as int;
+      viewModel.initSocket(userId);
+    } catch (e) {
+      viewModel.initSocket(1);
+    }
 
     if (widget.roomId != null) {
       viewModel.joinRoom(widget.roomId!);
     } else if (widget.gatheringId != null) {
-      final room = await viewModel.openGatheringRoom(widget.gatheringId!);
-      viewModel.joinRoom(room.id);
+      try {
+        final room = await viewModel.openGatheringRoom(widget.gatheringId!);
+        viewModel.joinRoom(room.id);
+      } catch (e) {
+        // 채팅방 생성 실패 시 무시
+      }
     }
   }
 
   @override
   void dispose() {
-    context.read<ChatViewModel>().leaveRoom();
+    _viewModel?.leaveRoom();
     _textController.dispose();
     super.dispose();
   }

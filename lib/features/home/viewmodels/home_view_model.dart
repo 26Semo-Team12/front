@@ -40,8 +40,41 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> init() async {
     try {
       _currentUser = await _authService.getMe();
-      final realInvites = await _inviteService.getMyInvitations();
-      _invitations = realInvites.map((e) => Invitation.fromJson(e)).toList();
+      if (_currentUser?.email == 'asdf@asdf.asdf') {
+        // 데모 계정: 각 타입 1개씩 mock 데이터
+        _invitations = [
+          Invitation(
+            id: 'mock-new',
+            type: InvitationType.newInvitation,
+            title: '주말 등산 모임',
+            dateTime: DateTime(2025, 8, 10, 9, 0),
+            location: '북한산 국립공원',
+            imageUrl: 'https://picsum.photos/seed/hiking/400/200',
+            memberCount: 6,
+          ),
+          Invitation(
+            id: 'mock-long',
+            type: InvitationType.longTerm,
+            title: '매주 수요일 요리 스터디',
+            dateTime: DateTime(2025, 8, 20, 18, 30),
+            location: '마포구 쿠킹 스튜디오',
+            imageUrl: 'https://picsum.photos/seed/cooking/400/200',
+            memberCount: 5,
+          ),
+          Invitation(
+            id: 'mock-expired',
+            type: InvitationType.expired,
+            title: '봄 소풍 피크닉',
+            dateTime: DateTime(2025, 4, 5, 11, 0),
+            location: '한강공원 여의도',
+            imageUrl: 'https://picsum.photos/seed/picnic/400/200',
+            memberCount: 10,
+          ),
+        ];
+      } else {
+        final realInvites = await _inviteService.getMyInvitations();
+        _invitations = realInvites.map((e) => Invitation.fromJson(e)).toList();
+      }
     } catch (e) {
       debugPrint('HomeViewModel.init() failed: $e');
     }
