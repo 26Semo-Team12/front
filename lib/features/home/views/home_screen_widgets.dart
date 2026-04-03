@@ -10,6 +10,8 @@ import '../../gathering/views/gathering_detail_screen.dart';
 import '../../settings/views/settings_screen.dart';
 import 'location_picker.dart';
 import 'time_picker.dart';
+import '../../notification/views/notification_screen.dart';
+import '../../notification/viewmodels/notification_view_model.dart';
 
 // ─── 한글 음절 분해 기반 퍼지 매칭 ─────────────────────────────────────────
 // 한글 유니코드 구조: 음절 = 0xAC00 + (초성 * 21 + 중성) * 28 + 종성
@@ -126,6 +128,33 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
       ),
       actions: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_none, color: Colors.black),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                );
+              },
+            ),
+            if (context.select<NotificationViewModel, bool>((vm) => vm.hasUnread))
+              Positioned(
+                right: 12,
+                top: 12,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD6706D),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
         IconButton(
           icon: const Icon(Icons.settings, color: Colors.black),
           onPressed: () => Navigator.push(
@@ -133,7 +162,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             MaterialPageRoute(builder: (_) => const SettingsScreen()),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }
