@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
 import '../../../core/services/mock_api_service.dart';
-import '../../home/viewmodels/home_view_model.dart'; // TagType
+import '../../home/viewmodels/home_view_model.dart';
 import '../../home/views/location_picker.dart';
 import '../viewmodels/profile_view_model.dart';
 import 'settings_screen.dart';
@@ -37,30 +37,26 @@ class _MyPageContent extends StatelessWidget {
 
     if (viewModel.isLoading || user == null) {
       return const Scaffold(
-        backgroundColor: Colors.white,
         body: Center(child: CircularProgressIndicator(color: Color(0xFFD6706D))),
       );
     }
 
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('마이페이지', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
+        title: const Text('마이페이지', style: TextStyle(fontWeight: FontWeight.bold)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -69,41 +65,44 @@ class _MyPageContent extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 24),
-            // ── 상단 프로필 영역 ──
-            _buildProfileHeader(user),
+            _ProfileHeader(user: user, viewModel: viewModel),
             const SizedBox(height: 32),
-            // ── 정보 섹션들 ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildSection(
+                    context: context,
                     title: '주 활동 지역',
-                    onEdit: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => LocationPicker(
-                          onSelected: (loc) => viewModel.addLocation(loc),
-                        ),
-                      );
-                    },
-                    child: _buildLocationChips(user, viewModel),
+                    onEdit: () => showDialog(
+                      context: context,
+                      builder: (_) => LocationPicker(
+                        onSelected: (loc) => viewModel.addLocation(loc),
+                      ),
+                    ),
+                    child: _buildLocationChips(user, viewModel, cs),
                   ),
                   const SizedBox(height: 28),
                   _buildSection(
+                    context: context,
                     title: '나의 관심사',
-                    onEdit: () => _showInterestDialog(context, viewModel),
+                    onEdit: () => showDialog(
+                      context: context,
+                      builder: (_) => _InterestPickerDialog(viewModel: viewModel),
+                    ),
                     child: _buildInterestChips(user, viewModel),
                   ),
                   const SizedBox(height: 28),
                   _buildSection(
+                    context: context,
                     title: '모임 가능 시간',
                     onEdit: () => _showTimeSlotPicker(context, user, viewModel),
-                    child: _buildTimeChips(user),
+                    child: _buildTimeChips(user, cs),
                   ),
                   const SizedBox(height: 28),
                   _buildSection(
+                    context: context,
                     title: '기본 정보',
                     onEdit: null,
                     child: _buildInfoChips(user),
@@ -118,68 +117,24 @@ class _MyPageContent extends StatelessWidget {
     );
   }
 
-  // ── 상단 프로필 헤더 ──
-  Widget _buildProfileHeader(UserProfile user) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 48,
-          backgroundImage: NetworkImage(
-            user.profileImageUrl.isNotEmpty
-                ? user.profileImageUrl
-                : 'https://via.placeholder.com/150',
-          ),
-          backgroundColor: Colors.grey.shade200,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          user.name,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6706D),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.star, size: 14, color: Colors.white),
-              const SizedBox(width: 4),
-              Text(
-                '신뢰도 ${user.reputationScore}점',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '${user.birthYear ?? '연도미상'} · ${user.gender?.displayName ?? '성별미상'}',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-        ),
-      ],
-    );
-  }
-
-  // ── 섹션 빌더 (헤더 Row + 데이터 영역) ──
   Widget _buildSection({
+    required BuildContext context,
     required String title,
     required VoidCallback? onEdit,
     required Widget child,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-            ),
+            Text(title,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: cs.onSurface)),
             if (onEdit != null)
               GestureDetector(
                 onTap: onEdit,
@@ -200,107 +155,89 @@ class _MyPageContent extends StatelessWidget {
     );
   }
 
-  // ── 활동 지역 Chip ──
-  Widget _buildLocationChips(UserProfile user, ProfileViewModel viewModel) {
+  Widget _buildLocationChips(UserProfile user, ProfileViewModel viewModel, ColorScheme cs) {
     if (user.locations.isEmpty) {
-      return Text('등록된 활동 지역이 없습니다.', style: TextStyle(color: Colors.grey.shade400, fontSize: 14));
+      return Text('등록된 활동 지역이 없습니다.',
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 14));
     }
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: user.locations.map((loc) {
-        return Chip(
-          label: Text(loc.displayLabel, style: const TextStyle(color: Colors.white, fontSize: 13)),
-          backgroundColor: kTagColors[TagType.location] ?? const Color(0xFF4A90D9),
-          deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white70),
-          onDeleted: () => viewModel.removeTag(loc.displayLabel, TagType.location),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          side: BorderSide.none,
-        );
-      }).toList(),
+      children: user.locations.map((loc) => Chip(
+        label: Text(loc.displayLabel,
+            style: const TextStyle(color: Colors.white, fontSize: 13)),
+        backgroundColor: kTagColors[TagType.location] ?? const Color(0xFF4A90D9),
+        deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white70),
+        onDeleted: () => viewModel.removeTag(loc.displayLabel, TagType.location),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+      )).toList(),
     );
   }
 
-  // ── 관심사 Chip ──
   Widget _buildInterestChips(UserProfile user, ProfileViewModel viewModel) {
     if (user.interests.isEmpty) {
-      return Text('등록된 관심사가 없습니다.', style: TextStyle(color: Colors.grey.shade400, fontSize: 14));
+      return Text('등록된 관심사가 없습니다.',
+          style: TextStyle(color: Colors.grey.shade400, fontSize: 14));
     }
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: user.interests.map((interest) {
-        return Chip(
-          label: Text(interest, style: const TextStyle(color: Colors.white, fontSize: 13)),
-          backgroundColor: kTagColors[TagType.interest] ?? const Color(0xFFE05C5C),
-          deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white70),
-          onDeleted: () => viewModel.removeTag(interest, TagType.interest),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          side: BorderSide.none,
-        );
-      }).toList(),
+      children: user.interests.map((interest) => Chip(
+        label: Text(interest,
+            style: const TextStyle(color: Colors.white, fontSize: 13)),
+        backgroundColor: kTagColors[TagType.interest] ?? const Color(0xFFE05C5C),
+        deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white70),
+        onDeleted: () => viewModel.removeTag(interest, TagType.interest),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+      )).toList(),
     );
   }
 
-  // ── 모임 가능 시간 (요일별 범위 요약) ──
-  Widget _buildTimeChips(UserProfile user) {
+  Widget _buildTimeChips(UserProfile user, ColorScheme cs) {
     if (user.availableTimes.isEmpty) {
-      return Text('등록된 모임 가능 시간이 없습니다.', style: TextStyle(color: Colors.grey.shade400, fontSize: 14));
+      return Text('등록된 모임 가능 시간이 없습니다.',
+          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 14));
     }
-
-    // 요일별로 그룹핑 후, 연속 시간을 범위로 합침
     final byDay = <int, List<int>>{};
     for (final slot in user.availableTimes) {
       byDay.putIfAbsent(slot.weekday, () => []).add(slot.hourIndex);
     }
-
     const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
     const timeColor = Color(0xFF7B68EE);
-
     final sortedDays = byDay.keys.toList()..sort();
-    final rangeWidgets = <Widget>[];
-
-    for (final day in sortedDays) {
-      final hours = byDay[day]!..sort();
-      // 연속 시간을 범위로 합침
-      final ranges = <String>[];
-      int start = hours[0];
-      int end = hours[0];
-      for (int i = 1; i < hours.length; i++) {
-        if (hours[i] == end + 1) {
-          end = hours[i];
-        } else {
-          ranges.add(_formatRange(start, end));
-          start = hours[i];
-          end = hours[i];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: sortedDays.map((day) {
+        final hours = byDay[day]!..sort();
+        final ranges = <String>[];
+        int s = hours[0], e = hours[0];
+        for (int i = 1; i < hours.length; i++) {
+          if (hours[i] == e + 1) { e = hours[i]; }
+          else { ranges.add(_formatRange(s, e)); s = hours[i]; e = hours[i]; }
         }
-      }
-      ranges.add(_formatRange(start, end));
-
-      rangeWidgets.add(
-        Container(
+        ranges.add(_formatRange(s, e));
+        return Container(
           margin: const EdgeInsets.only(bottom: 10),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 32,
-                height: 28,
+                width: 32, height: 28,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: day >= 5 ? timeColor : timeColor.withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  dayLabels[day],
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                ),
+                child: Text(dayLabels[day],
+                    style: const TextStyle(
+                        color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+                  spacing: 6, runSpacing: 6,
                   children: ranges.map((r) => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
@@ -308,35 +245,30 @@ class _MyPageContent extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: timeColor.withValues(alpha: 0.3)),
                     ),
-                    child: Text(r, style: const TextStyle(color: Color(0xFF5B4FC7), fontSize: 13)),
+                    child: Text(r,
+                        style: const TextStyle(color: Color(0xFF5B4FC7), fontSize: 13)),
                   )).toList(),
                 ),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: rangeWidgets,
+        );
+      }).toList(),
     );
   }
 
   String _formatRange(int start, int end) {
     final s = '${start.toString().padLeft(2, '0')}:00';
     if (start == end) return s;
-    final e = '${(end + 1).toString().padLeft(2, '0')}:00';
-    return '$s – $e';
+    return '$s – ${(end + 1).toString().padLeft(2, '0')}:00';
   }
 
-  // ── 기본 정보 Chip (읽기 전용) ──
   Widget _buildInfoChips(UserProfile user) {
     final chips = <Widget>[];
     if (user.gender != null) {
       chips.add(Chip(
-        label: Text(user.gender!.displayName, style: const TextStyle(color: Colors.white, fontSize: 13)),
+        label: Text(user.gender!.displayName,
+            style: const TextStyle(color: Colors.white, fontSize: 13)),
         backgroundColor: kTagColors[TagType.gender] ?? const Color(0xFFE8A838),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide.none,
@@ -344,46 +276,148 @@ class _MyPageContent extends StatelessWidget {
     }
     if (user.ageRange?.isNotEmpty ?? false) {
       chips.add(Chip(
-        label: Text(user.ageRange!, style: const TextStyle(color: Colors.white, fontSize: 13)),
+        label: Text(user.ageRange!,
+            style: const TextStyle(color: Colors.white, fontSize: 13)),
         backgroundColor: kTagColors[TagType.ageRange] ?? const Color(0xFF50C878),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide.none,
       ));
     }
     if (chips.isEmpty) {
-      return Text('등록된 정보가 없습니다.', style: TextStyle(color: Colors.grey.shade400, fontSize: 14));
+      return Text('등록된 정보가 없습니다.',
+          style: TextStyle(color: Colors.grey.shade400, fontSize: 14));
     }
     return Wrap(spacing: 8, runSpacing: 8, children: chips);
   }
 
-  // ── 관심사 선택 다이얼로그 ──
-  void _showInterestDialog(BuildContext context, ProfileViewModel viewModel) {
-    showDialog(
-      context: context,
-      builder: (ctx) => _InterestPickerDialog(viewModel: viewModel),
-    );
-  }
-
-  // ── 모임 가능 시간 선택 바텀시트 ──
-  void _showTimeSlotPicker(BuildContext context, UserProfile user, ProfileViewModel viewModel) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _TimeSlotPickerSheet(
-        initialSlots: List<TimeSlot>.from(user.availableTimes),
-        onSave: (slots) => viewModel.updateAvailableTimes(slots),
+  void _showTimeSlotPicker(
+      BuildContext context, UserProfile user, ProfileViewModel viewModel) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _TimeSlotPickerScreen(
+          initialSlots: List<TimeSlot>.from(user.availableTimes),
+          onSave: (slots) => viewModel.updateAvailableTimes(slots),
+        ),
       ),
     );
   }
 }
 
-// ─── 관심사 선택 다이얼로그 ────────────────────────────────────────────────
+// ─── 프로필 헤더 (사진 수정 포함) ────────────────────────────────────────────
+class _ProfileHeader extends StatelessWidget {
+  final UserProfile user;
+  final ProfileViewModel viewModel;
+  const _ProfileHeader({required this.user, required this.viewModel});
 
-// 가나다 정렬된 관심사 목록
+  void _pickImage(BuildContext context) {
+    // 실제 앱에서는 image_picker 패키지 사용
+    // 여기서는 mock URL 목록으로 시뮬레이션
+    final mockImages = [
+      'https://picsum.photos/seed/user1/200',
+      'https://picsum.photos/seed/user2/200',
+      'https://picsum.photos/seed/user3/200',
+      'https://picsum.photos/seed/user4/200',
+      'https://picsum.photos/seed/user5/200',
+    ];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('프로필 사진 변경',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: mockImages.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () {
+                    viewModel.updateProfileImage(mockImages[i]);
+                    Navigator.pop(ctx);
+                  },
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundImage: NetworkImage(mockImages[i]),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        // 프로필 사진 + 편집 버튼
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            CircleAvatar(
+              radius: 48,
+              backgroundImage: NetworkImage(
+                user.profileImageUrl.isNotEmpty
+                    ? user.profileImageUrl
+                    : 'https://via.placeholder.com/150',
+              ),
+              backgroundColor: Colors.grey.shade200,
+            ),
+            GestureDetector(
+              onTap: () => _pickImage(context),
+              child: Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD6706D),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.surface, width: 2),
+                ),
+                child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(user.name,
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 6),
+        Text(
+          '${user.birthYear ?? '연도미상'} · ${user.gender?.displayName ?? '성별미상'}',
+          style: TextStyle(fontSize: 14, color: cs.onSurface.withValues(alpha: 0.5)),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 관심사 선택 다이얼로그 ────────────────────────────────────────────────────
 final _sortedInterests = List<String>.from(kInterestPresets)..sort();
 
-// ── 파자 분해 기반 퍼지 매칭 (초성/중성/종성 분리) ──
 const _chosungList = [
   'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ',
   'ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
@@ -429,8 +463,7 @@ bool _interestMatchesQuery(String word, String query) {
     bool ok = true;
     for (var i = 0; i < qChars.length; i++) {
       if (!_charMatches(qChars[i], wChars[start + i], isLast: i == qChars.length - 1)) {
-        ok = false;
-        break;
+        ok = false; break;
       }
     }
     if (ok) return true;
@@ -474,8 +507,8 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return AlertDialog(
-      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -485,7 +518,6 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 검색창
             TextField(
               controller: _searchController,
               autofocus: true,
@@ -499,36 +531,41 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
                       )
                     : null,
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: cs.onSurface.withValues(alpha: 0.06),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
             const SizedBox(height: 8),
-            // 목록
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 300),
               child: _filtered.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Text('검색 결과가 없습니다.', style: TextStyle(color: Colors.grey)),
+                      child: Text('검색 결과가 없습니다.',
+                          style: TextStyle(color: Colors.grey)),
                     )
                   : ListView.builder(
                       shrinkWrap: true,
                       itemCount: _filtered.length,
                       itemBuilder: (_, i) {
                         final item = _filtered[i];
-                        final alreadyAdded = widget.viewModel.currentUser?.interests.contains(item) ?? false;
+                        final added = widget.viewModel.currentUser?.interests
+                                .contains(item) ??
+                            false;
                         return ListTile(
                           dense: true,
                           title: Text(item, style: const TextStyle(fontSize: 15)),
-                          trailing: alreadyAdded
-                              ? const Icon(Icons.check_circle, color: Color(0xFFD6706D), size: 20)
-                              : const Icon(Icons.add_circle_outline, color: Color(0xFFD6706D), size: 20),
-                          onTap: alreadyAdded
+                          trailing: added
+                              ? const Icon(Icons.check_circle,
+                                  color: Color(0xFFD6706D), size: 20)
+                              : const Icon(Icons.add_circle_outline,
+                                  color: Color(0xFFD6706D), size: 20),
+                          onTap: added
                               ? null
                               : () {
                                   widget.viewModel.addTag(item, TagType.interest);
@@ -544,39 +581,37 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('닫기', style: TextStyle(color: Colors.black54)),
+          child: Text('닫기',
+              style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
         ),
       ],
     );
   }
 }
 
-class _TimeSlotPickerSheet extends StatefulWidget {
+// ─── 모임 가능 시간 선택 (전체화면) ──────────────────────────────────────────
+class _TimeSlotPickerScreen extends StatefulWidget {
   final List<TimeSlot> initialSlots;
   final ValueChanged<List<TimeSlot>> onSave;
 
-  const _TimeSlotPickerSheet({
+  const _TimeSlotPickerScreen({
     required this.initialSlots,
     required this.onSave,
   });
 
   @override
-  State<_TimeSlotPickerSheet> createState() => _TimeSlotPickerSheetState();
+  State<_TimeSlotPickerScreen> createState() => _TimeSlotPickerScreenState();
 }
 
-class _TimeSlotPickerSheetState extends State<_TimeSlotPickerSheet> {
+class _TimeSlotPickerScreenState extends State<_TimeSlotPickerScreen> {
   late Set<String> _selectedKeys;
 
   static const _weekdayLabels = ['월', '화', '수', '목', '금', '토', '일'];
   static const _startHour = 6;
   static const _endHour = 23;
-  static const _cellHeight = 34.0;
-  static const _cellVMargin = 1.5;
-  static const _rowHeight = _cellHeight + _cellVMargin * 2;
-  static const _timeLabelWidth = 44.0;
+  static const _timeLabelWidth = 36.0;
 
-  // ── 드래그 상태 ──
-  bool? _isDragSelecting; // true=선택 모드, false=해제 모드, null=드래그 중 아님
+  bool? _isDragSelecting;
   final Set<String> _draggedKeys = {};
   final GlobalKey _gridKey = GlobalKey();
 
@@ -590,32 +625,29 @@ class _TimeSlotPickerSheetState extends State<_TimeSlotPickerSheet> {
 
   String _key(int weekday, int hour) => '$weekday-$hour';
 
-  List<TimeSlot> _buildSlots() {
-    return _selectedKeys.map((k) {
-      final parts = k.split('-');
-      return TimeSlot(weekday: int.parse(parts[0]), hourIndex: int.parse(parts[1]));
-    }).toList();
-  }
+  List<TimeSlot> _buildSlots() => _selectedKeys.map((k) {
+        final p = k.split('-');
+        return TimeSlot(weekday: int.parse(p[0]), hourIndex: int.parse(p[1]));
+      }).toList();
 
-  /// 글로벌 좌표로부터 그리드 셀 (weekday, hour)을 계산
   ({int weekday, int hour})? _hitTest(Offset globalPos) {
     final rb = _gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (rb == null) return null;
-
     final local = rb.globalToLocal(globalPos);
     if (local.dx < _timeLabelWidth || local.dx > rb.size.width) return null;
 
-    // 요일 헤더 행(~24px) + SizedBox(6) = 약 30px 오프셋
-    const headerOffset = 30.0;
-    final y = local.dy - headerOffset;
+    // 헤더 높이 계산: 요일 행 높이를 rowHeight와 동일하게 맞춤
+    final totalRows = _endHour - _startHour + 1 + 1; // +1 for header
+    final rowHeight = rb.size.height / totalRows;
+    final y = local.dy - rowHeight; // 헤더 제외
     if (y < 0) return null;
 
-    final rowIdx = y ~/ _rowHeight;
+    final rowIdx = (y / rowHeight).floor();
     final hour = _startHour + rowIdx;
     if (hour > _endHour) return null;
 
-    final cellAreaWidth = rb.size.width - _timeLabelWidth;
-    final col = ((local.dx - _timeLabelWidth) / (cellAreaWidth / 7)).floor();
+    final cellW = (rb.size.width - _timeLabelWidth) / 7;
+    final col = ((local.dx - _timeLabelWidth) / cellW).floor();
     if (col < 0 || col > 6) return null;
 
     return (weekday: col, hour: hour);
@@ -624,12 +656,9 @@ class _TimeSlotPickerSheetState extends State<_TimeSlotPickerSheet> {
   void _onPointerDown(PointerDownEvent e) {
     final cell = _hitTest(e.position);
     if (cell == null) return;
-
     final k = _key(cell.weekday, cell.hour);
-    // 처음 터치한 셀의 상태로 모드 결정: 이미 선택돼 있으면 해제 모드, 아니면 선택 모드
     _isDragSelecting = !_selectedKeys.contains(k);
-    _draggedKeys.clear();
-    _draggedKeys.add(k);
+    _draggedKeys..clear()..add(k);
     _applyDrag(k);
   }
 
@@ -637,9 +666,8 @@ class _TimeSlotPickerSheetState extends State<_TimeSlotPickerSheet> {
     if (_isDragSelecting == null) return;
     final cell = _hitTest(e.position);
     if (cell == null) return;
-
     final k = _key(cell.weekday, cell.hour);
-    if (_draggedKeys.contains(k)) return; // 이미 처리한 셀
+    if (_draggedKeys.contains(k)) return;
     _draggedKeys.add(k);
     _applyDrag(k);
   }
@@ -662,175 +690,174 @@ class _TimeSlotPickerSheetState extends State<_TimeSlotPickerSheet> {
   @override
   Widget build(BuildContext context) {
     const themeColor = Color(0xFFD6706D);
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hours = List.generate(_endHour - _startHour + 1, (i) => _startHour + i);
-    final selectedCount = _selectedKeys.length;
+    final totalRows = hours.length + 1; // +1 헤더
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.78,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // ── 핸들 ──
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('모임 가능 시간 선택',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() => _selectedKeys.clear()),
+            child: Text('초기화',
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.5), fontSize: 14)),
           ),
-          const SizedBox(height: 16),
-
-          // ── 헤더 ──
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '모임 가능 시간 선택',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$selectedCount개 시간대 선택됨',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () => setState(() => _selectedKeys.clear()),
-                      child: Text('초기화', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
-                    ),
-                    const SizedBox(width: 4),
-                    ElevatedButton(
-                      onPressed: () {
-                        widget.onSave(_buildSlots());
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeColor,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      ),
-                      child: const Text('저장', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Icon(Icons.touch_app, size: 14, color: Colors.grey.shade400),
-                const SizedBox(width: 4),
-                Text(
-                  '탭 또는 드래그하여 시간을 선택하세요',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // ── 시간표 그리드 (드래그 지원) ──
-          Expanded(
-            child: Listener(
-              onPointerDown: _onPointerDown,
-              onPointerMove: _onPointerMove,
-              onPointerUp: _onPointerUp,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  key: _gridKey,
-                  children: [
-                    // 요일 헤더
-                    Row(
-                      children: [
-                        const SizedBox(width: _timeLabelWidth),
-                        ...List.generate(7, (d) => Expanded(
-                          child: Center(
-                            child: Text(
-                              _weekdayLabels[d],
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: d >= 5 ? themeColor : Colors.black87,
-                              ),
-                            ),
-                          ),
-                        )),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-
-                    // 시간 행
-                    ...hours.map((hour) {
-                      return SizedBox(
-                        height: _rowHeight,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: _timeLabelWidth,
-                              child: Text(
-                                '${hour.toString().padLeft(2, '0')}시',
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            ...List.generate(7, (d) {
-                              final selected = _selectedKeys.contains(_key(d, hour));
-                              return Expanded(
-                                child: Container(
-                                  margin: const EdgeInsets.all(_cellVMargin),
-                                  height: _cellHeight,
-                                  decoration: BoxDecoration(
-                                    color: selected
-                                        ? themeColor.withValues(alpha: 0.85)
-                                        : Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: selected
-                                          ? themeColor
-                                          : Colors.grey.shade200,
-                                      width: selected ? 1.5 : 0.5,
-                                    ),
-                                  ),
-                                  child: selected
-                                      ? const Center(
-                                          child: Icon(Icons.check, size: 14, color: Colors.white),
-                                        )
-                                      : null,
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+            padding: const EdgeInsets.only(right: 8),
+            child: ElevatedButton(
+              onPressed: () {
+                widget.onSave(_buildSlots());
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: themeColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
+              child: const Text('저장',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
       ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                children: [
+                  Icon(Icons.touch_app,
+                      size: 14, color: cs.onSurface.withValues(alpha: 0.4)),
+                  const SizedBox(width: 4),
+                  Text('탭 또는 드래그하여 시간을 선택하세요',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurface.withValues(alpha: 0.4))),
+                ],
+              ),
+            ),
+            // 그리드: Expanded로 남은 공간 전부 사용 → 스크롤 없이 모든 셀 표시
+            Expanded(
+              child: Listener(
+                onPointerDown: _onPointerDown,
+                onPointerMove: _onPointerMove,
+                onPointerUp: _onPointerUp,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final rowH = constraints.maxHeight / totalRows;
+                      final cellVMargin = rowH * 0.06;
+                      final cellH = rowH - cellVMargin * 2;
+
+                      return Column(
+                        key: _gridKey,
+                        children: [
+                          // 요일 헤더
+                          SizedBox(
+                            height: rowH,
+                            child: Row(
+                              children: [
+                                SizedBox(width: _timeLabelWidth),
+                                ...List.generate(7, (d) => Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      _weekdayLabels[d],
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: d >= 5
+                                            ? themeColor
+                                            : cs.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                )),
+                              ],
+                            ),
+                          ),
+                          // 시간 행
+                          ...hours.map((hour) {
+                            return SizedBox(
+                              height: rowH,
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: _timeLabelWidth,
+                                    child: Text(
+                                      '${hour.toString().padLeft(2, '0')}시',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          color: cs.onSurface
+                                              .withValues(alpha: 0.5)),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  ...List.generate(7, (d) {
+                                    final selected =
+                                        _selectedKeys.contains(_key(d, hour));
+                                    return Expanded(
+                                      child: Container(
+                                        margin: EdgeInsets.symmetric(
+                                            horizontal: 1.5,
+                                            vertical: cellVMargin),
+                                        height: cellH,
+                                        decoration: BoxDecoration(
+                                          color: selected
+                                              ? themeColor.withValues(alpha: 0.85)
+                                              : (isDark
+                                                  ? Colors.white
+                                                      .withValues(alpha: 0.07)
+                                                  : Colors.grey.shade100),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                            color: selected
+                                                ? themeColor
+                                                : (isDark
+                                                    ? Colors.white
+                                                        .withValues(alpha: 0.12)
+                                                    : Colors.grey.shade200),
+                                            width: selected ? 1.5 : 0.5,
+                                          ),
+                                        ),
+                                        child: selected
+                                            ? const Center(
+                                                child: Icon(Icons.check,
+                                                    size: 10,
+                                                    color: Colors.white),
+                                              )
+                                            : null,
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
-

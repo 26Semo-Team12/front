@@ -94,7 +94,7 @@ const Map<String, Map<String, List<String>>> kLocationData = {
   },
   // ── 세종특별자치시 ──────────────────────────────────────────────────────────
   '세종특별자치시': {
-    '세종시': [],
+    '': [],
   },
   // ── 경기도 ──────────────────────────────────────────────────────────────────
   '경기도': {
@@ -285,9 +285,14 @@ List<LocationModel> _buildAllLocations() {
   for (final prov in kLocationData.entries) {
     for (final city in prov.value.entries) {
       if (city.key.isEmpty) {
-        // 광역시/특별시: 구 단위가 바로 있음
-        for (final gu in city.value) {
-          result.add(LocationModel(province: prov.key, district: gu));
+        // 광역시/특별시/세종: 구 단위가 바로 있거나 없음
+        if (city.value.isEmpty) {
+          // 세종특별자치시처럼 하위 구 없음
+          result.add(LocationModel(province: prov.key, district: ''));
+        } else {
+          for (final gu in city.value) {
+            result.add(LocationModel(province: prov.key, district: gu));
+          }
         }
       } else if (city.value.isEmpty) {
         // 구 없는 시/군
@@ -523,7 +528,14 @@ class _LocationPickerState extends State<LocationPicker> {
                 title: Text(prov.key, style: const TextStyle(fontSize: 15)),
                 children: prov.value.entries.expand((city) {
                   if (city.key.isEmpty) {
-                    // 광역시: 구 바로 나열
+                    // 광역시/세종: 구 바로 나열 or 없음
+                    if (city.value.isEmpty) {
+                      // 세종특별자치시: 하위 없이 시 자체 선택
+                      return [_districtTile(
+                        label: prov.key,
+                        loc: LocationModel(province: prov.key, district: ''),
+                      )];
+                    }
                     return city.value.map((gu) => _districtTile(
                           label: '${prov.key} $gu',
                           loc: LocationModel(province: prov.key, district: gu),

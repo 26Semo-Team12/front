@@ -72,6 +72,12 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateProfileImage(String imageUrl) async {
+    if (_currentUser == null) return;
+    _currentUser = await _apiService.patchMe(profileImageUrl: imageUrl);
+    notifyListeners();
+  }
+
   Future<void> updateAvailableTimes(List<TimeSlot> slots) async {
     if (_currentUser == null) return;
     _currentUser = await _apiService.patchMe(availableTimes: slots);
