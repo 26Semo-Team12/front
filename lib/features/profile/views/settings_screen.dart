@@ -200,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
                             fontSize: 16)),
-                    onTap: _showDeleteAccountDialog,
+                    onTap: () => _showDeleteAccountDialog(viewModel),
                   ),
                   const SizedBox(height: 40),
                 ],
