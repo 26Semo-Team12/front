@@ -63,42 +63,6 @@ class NotificationViewModel extends ChangeNotifier {
         isRead: false,
         createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
       ),
-      NotificationItem(
-        id: 2,
-        userId: 1,
-        type: NotificationType.chat,
-        title: '새로운 메시지',
-        content: '마포구 맛집 탐방 모임방에서 메시지가 도착했습니다.',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
-      ),
-      NotificationItem(
-        id: 3,
-        userId: 1,
-        type: NotificationType.schedule,
-        title: '일정 알림',
-        content: '내일 오후 2시에 코딩 스터디 모임이 있습니다.',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      NotificationItem(
-        id: 4,
-        userId: 1,
-        type: NotificationType.evaluation,
-        title: '모임 평가 요청',
-        content: '"종로구 독서 모임"이 종료되었습니다. 팀원들의 매너를 평가해주세요.',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      NotificationItem(
-        id: 5,
-        userId: 1,
-        type: NotificationType.system,
-        title: '시스템 점검 안내',
-        content: '내일 새벽 2시부터 4시까지 서버 정기 점검이 있을 예정입니다.',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
     ];
   }
 

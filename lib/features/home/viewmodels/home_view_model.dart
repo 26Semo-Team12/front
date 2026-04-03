@@ -203,6 +203,16 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 마이페이지 수정 후 홈화면 프로필 갱신
+  Future<void> refreshUser() async {
+    try {
+      _currentUser = await _authService.getMe();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('HomeViewModel.refreshUser() failed: $e');
+    }
+  }
+
   void updateInvitationMeta(String id, {String? newTitle, String? newImageUrl}) {
     final index = _invitations.indexWhere((inv) => inv.id == id);
     if (index != -1) {

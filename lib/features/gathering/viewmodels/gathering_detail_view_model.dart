@@ -4,10 +4,14 @@ import '../models/gathering.dart';
 import '../models/schedule_option.dart';
 import '../services/gathering_service.dart';
 import '../services/schedule_service.dart';
+import '../../auth/services/auth_service.dart';
 
 class GatheringDetailViewModel extends ChangeNotifier {
   final GatheringService _gatheringService = GatheringService();
   final ScheduleService _scheduleService = ScheduleService();
+  final AuthService _authService = AuthService();
+
+  String? _currentUserEmail;
 
   Invitation _invitation;
   Gathering? _gathering;
@@ -21,6 +25,18 @@ class GatheringDetailViewModel extends ChangeNotifier {
 
   List<ScheduleOption> _scheduleOptions = [];
   List<ScheduleOption> get scheduleOptions => _scheduleOptions;
+
+  // 앨범 이미지 목록 (로컬 경로 또는 URL)
+  List<String> _albumImages = [];
+  List<String> get albumImages => List.unmodifiable(_albumImages);
+
+  // 구성원 목록 (이름, 프로필 이미지 URL)
+  List<Map<String, String>> _members = [];
+  List<Map<String, String>> get members => List.unmodifiable(_members);
+
+  // 최근 채팅 메시지 (text, sender, time)
+  Map<String, String>? _latestMessage;
+  Map<String, String>? get latestMessage => _latestMessage;
 
   int? get gatheringId => int.tryParse(_invitation.id);
 
@@ -38,9 +54,31 @@ class GatheringDetailViewModel extends ChangeNotifier {
   }
 
   Future<void> loadData() async {
-    if (gatheringId == null) return;
     _isLoading = true;
     notifyListeners();
+
+    // 현재 유저 이메일 로드
+    try {
+      final user = await _authService.getMe();
+      _currentUserEmail = user.email;
+    } catch (_) {}
+
+    final isDemoAccount = _currentUserEmail == 'asdf@asdf.asdf';
+
+    // demo 계정이면 gatheringId 없어도 mock 데이터 주입
+    if (isDemoAccount) {
+      if (_members.isEmpty) _members = List<Map<String, String>>.from(_demoMembers);
+      if (_albumImages.isEmpty) _albumImages = List<String>.from(_demoAlbumImages);
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    if (gatheringId == null) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
 
     try {
       _gathering = await _gatheringService.getGatheringDetail(gatheringId!);
@@ -54,6 +92,24 @@ class GatheringDetailViewModel extends ChangeNotifier {
     }
   }
 
+  static const _demoMembers = [
+    {'name': '김민준', 'imageUrl': 'https://picsum.photos/seed/m1/100'},
+    {'name': '이서연', 'imageUrl': 'https://picsum.photos/seed/m2/100'},
+    {'name': '박지호', 'imageUrl': 'https://picsum.photos/seed/m3/100'},
+    {'name': '최유나', 'imageUrl': 'https://picsum.photos/seed/m4/100'},
+    {'name': '정하은', 'imageUrl': 'https://picsum.photos/seed/m5/100'},
+  ];
+
+  static const _defaultMembers = <Map<String, String>>[];  // 서버 연동 후 사용
+
+  static const _demoAlbumImages = [
+    'https://picsum.photos/seed/gather1/600/400',
+    'https://picsum.photos/seed/gather2/600/400',
+    'https://picsum.photos/seed/gather3/600/400',
+    'https://picsum.photos/seed/gather4/600/400',
+    'https://picsum.photos/seed/gather5/600/400',
+  ];
+
   void updateTitle(String newTitle) {
     _invitation = _invitation.copyWith(title: newTitle);
     onUpdateGlobalMeta(_invitation.id, newTitle, _invitation.imageUrl);
@@ -62,7 +118,15 @@ class GatheringDetailViewModel extends ChangeNotifier {
 
   void updateImage(String newImageUrl) {
     _invitation = _invitation.copyWith(imageUrl: newImageUrl);
+    if (!_albumImages.contains(newImageUrl)) {
+      _albumImages.insert(0, newImageUrl);
+    }
     onUpdateGlobalMeta(_invitation.id, _invitation.title, newImageUrl);
+    notifyListeners();
+  }
+
+  void setLatestMessage(String text, String sender, String time) {
+    _latestMessage = {'text': text, 'sender': sender, 'time': time};
     notifyListeners();
   }
 

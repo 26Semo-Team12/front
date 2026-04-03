@@ -23,13 +23,21 @@ class MyPageScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => ProfileViewModel(AuthService()),
-      child: const _MyPageContent(),
+      child: _MyPageContent(
+        onPop: () {
+          // 마이페이지 닫힐 때 홈화면 프로필 갱신
+          try {
+            context.read<HomeViewModel>().refreshUser();
+          } catch (_) {}
+        },
+      ),
     );
   }
 }
 
 class _MyPageContent extends StatelessWidget {
-  const _MyPageContent();
+  final VoidCallback? onPop;
+  const _MyPageContent({this.onPop});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +57,10 @@ class _MyPageContent extends StatelessWidget {
         title: const Text('마이페이지', style: TextStyle(fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            onPop?.call();
+            Navigator.pop(context);
+          },
         ),
         actions: [
           IconButton(
