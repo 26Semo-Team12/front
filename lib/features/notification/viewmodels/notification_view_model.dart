@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,8 @@ class NotificationViewModel extends ChangeNotifier {
   bool _isLoading = false;
   final NotificationService _notificationService = NotificationService();
   IO.Socket? _socket;
+  final StreamController<NotificationItem> _popupController = StreamController<NotificationItem>.broadcast();
+  Stream<NotificationItem> get notificationStream => _popupController.stream;
 
   List<NotificationItem> get notifications => _notifications;
   bool get isLoading => _isLoading;
@@ -58,6 +61,7 @@ class NotificationViewModel extends ChangeNotifier {
         if (notifData != null) {
           final newNotif = NotificationItem.fromJson(notifData);
           _notifications.insert(0, newNotif);
+          _popupController.add(newNotif); // 팝업 브로드캐스트
           notifyListeners();
         }
       });
@@ -106,7 +110,22 @@ class NotificationViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _socket?.dispose();
+    _popupController.close();
     super.dispose();
+  }
+
+  void simulateNotification() {
+    final newItem = NotificationItem(
+      id: DateTime.now().millisecondsSinceEpoch,
+      userId: 1,
+      type: NotificationType.invite,
+      title: '새로운 초대장',
+      content: '방금 새로운 모임 초대장이 도착했습니다!',
+      createdAt: DateTime.now(),
+    );
+    _notifications.insert(0, newItem);
+    _popupController.add(newItem);
+    notifyListeners();
   }
 
   void onNotificationTap(BuildContext context, NotificationItem item) {

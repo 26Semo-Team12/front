@@ -99,8 +99,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ? const Color(0xFF7B68EE)
             : Colors.grey.shade400,
         tooltip: 'AI MC 버튼 토글 (디버그)',
-        onPressed: () => setState(() => _showAiMcButton = !_showAiMcButton),
-        child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 20),
+        onPressed: () {
+          setState(() => _showAiMcButton = !_showAiMcButton);
+          context.read<NotificationViewModel>().simulateNotification();
+        },
+        child: const Icon(Icons.flash_on, color: Colors.white, size: 20),
       ),
     );
   }

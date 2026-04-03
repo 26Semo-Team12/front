@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/splash/views/splash_screen.dart';
 import 'features/notification/viewmodels/notification_view_model.dart';
+import 'features/notification/views/notification_popup_overlay.dart';
 import 'features/home/viewmodels/home_view_model.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/gathering/services/invite_service.dart';
@@ -31,6 +32,9 @@ class VentureApp extends StatelessWidget {
           themeMode: themeVm.themeMode,
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),
+          builder: (context, child) {
+            return NotificationPopupOverlay(child: child!);
+          },
           home: const SplashScreen(),
         ),
       ),
