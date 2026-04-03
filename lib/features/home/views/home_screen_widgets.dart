@@ -219,6 +219,14 @@ class UserProfileCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${user.birthYear ?? '연도미상'} · ${user.gender?.displayName ?? '성별미상'}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                 ),

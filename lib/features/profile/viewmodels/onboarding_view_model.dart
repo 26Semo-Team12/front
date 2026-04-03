@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/models/user_profile.dart';
-import '../../../core/services/mock_api_service.dart';
+import '../../auth/services/auth_service.dart';
 
 class OnboardingViewModel extends ChangeNotifier {
-  final MockApiService _mockApiService = MockApiService.instance;
+  final AuthService _authService = AuthService();
+
+  final String? email;
+  final String? password;
+
+  OnboardingViewModel({this.email, this.password});
 
   int _currentStep = 0;
   int get currentStep => _currentStep;
@@ -75,8 +80,8 @@ class OnboardingViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    if (_birthYear == null || _birthYear! < 1900 || _birthYear! > DateTime.now().year) {
-      _step1Error = '올바른 출생 연도를 입력해 주세요.';
+    if (_birthYear == null || _birthYear! < 1925 || _birthYear! > 2005) {
+      _step1Error = '올바른 출생 연도를 입력해 주세요. (1925-2005)';
       notifyListeners();
       return false;
     }
@@ -126,20 +131,35 @@ class OnboardingViewModel extends ChangeNotifier {
     if (!validateStep2()) return;
 
     _isLoading = true;
+    _step2Error = null;
     notifyListeners();
 
     try {
-      await _mockApiService.patchMe(
-        name: _name.trim(),
-        birthYear: _birthYear as Object?,
-        interests: _selectedInterests.toList(),
-        gender: _gender,
-        locations: _location != null ? [_location!] : [],
-      );
-      // isProfileCompleted는 백엔드나 MockApiService에서 관리해야 하지만, 지금은 호출만 함.
+      // 나이 계산: 2024 - 출생연도
+      final age = 2024 - (_birthYear ?? 0);
+      
+      final signupData = {
+        'email': email,
+        'password': password,
+        'name': _name.trim(),
+        'age': age,
+        'gender': _gender?.name.toLowerCase() ?? 'other', // male, female
+        'location': _location?.displayLabel ?? '',
+        'interests': _selectedInterests.toList(),
+        'preferredSize': 'any', // 기본값
+        'profileImageBase64': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // 최소 투명 PNG placeholder
+      };
+
+      await _authService.signUp(signupData);
+      
+      // 가입 후 바로 로그인을 시도하여 토큰을 얻어야 할 수도 있음
+      if (email != null && password != null) {
+        await _authService.login(email!, password!);
+      }
+
       onSuccess();
     } catch (e) {
-      _step2Error = '프로필 저장에 실패했습니다.';
+      _step2Error = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();

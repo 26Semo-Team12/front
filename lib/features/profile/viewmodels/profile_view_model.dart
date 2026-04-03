@@ -4,9 +4,11 @@ import '../../../core/models/user_profile.dart';
 import '../../../core/models/enums.dart';
 import '../../home/viewmodels/home_view_model.dart'; // TagType
 import '../../auth/views/auth_screen.dart';
+import '../../auth/services/auth_service.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final MockApiService _apiService;
+  final AuthService _authService = AuthService();
   UserProfile? _currentUser;
   bool _isLoading = false;
 
@@ -20,7 +22,13 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> _loadUser() async {
     _isLoading = true;
     notifyListeners();
-    _currentUser = await _apiService.getMe();
+    try {
+      // 먼저 실제 서버에서 내 정보를 가져오려고 시도
+      _currentUser = await _authService.getMe();
+    } catch (e) {
+      // 서버 에러 시 Mock 데이터로 폴백
+      _currentUser = await _apiService.getMe();
+    }
     _isLoading = false;
     notifyListeners();
   }
@@ -95,8 +103,10 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> logout(BuildContext context) async {
-    // Mock clearing shared_preferences / token
-    await Future.delayed(const Duration(milliseconds: 500));
+    _isLoading = true;
+    notifyListeners();
+    
+    await _authService.signOut();
 
     if (context.mounted) {
       Navigator.pushAndRemoveUntil(
@@ -104,6 +114,28 @@ class ProfileViewModel extends ChangeNotifier {
         MaterialPageRoute(builder: (_) => const AuthScreen()),
         (route) => false,
       );
+    }
+    _isLoading = false;
+  }
+
+  Future<void> deleteAccount(BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      await _authService.deleteMe();
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const AuthScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Account deletion failed: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

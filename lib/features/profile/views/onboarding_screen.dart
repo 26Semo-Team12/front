@@ -22,12 +22,19 @@ const kMockInterests = [
 ];
 
 class OnboardingScreen extends StatelessWidget {
-  const OnboardingScreen({super.key});
+  final String? email;
+  final String? password;
+
+  const OnboardingScreen({
+    super.key,
+    this.email,
+    this.password,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => OnboardingViewModel(),
+      create: (_) => OnboardingViewModel(email: email, password: password),
       child: const _OnboardingScreenContent(),
     );
   }

@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/services/mock_api_service.dart';
+import '../../auth/services/auth_service.dart';
 import '../models/invitation.dart';
 
 enum TagType { location, time, gender, ageRange, interest }
 
 class HomeViewModel extends ChangeNotifier {
   final MockApiService _apiService;
+  final AuthService _authService = AuthService();
   UserProfile? _currentUser;
   List<Invitation> _invitations = [];
   // 멀티 셀렉트 필터: 기본값 = 새 초대장 + 장기 모임 활성화
@@ -36,7 +38,12 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    _currentUser = await _apiService.getMe();
+    try {
+      _currentUser = await _authService.getMe();
+    } catch (e) {
+      debugPrint('AuthService.getMe() failed: $e');
+      _currentUser = await _apiService.getMe();
+    }
     _invitations = await _apiService.getInvitations();
     notifyListeners();
   }
@@ -93,7 +100,6 @@ class HomeViewModel extends ChangeNotifier {
     if (_currentUser == null) return;
     switch (type) {
       case TagType.location:
-        break;
       case TagType.time:
         break;
       case TagType.interest:
