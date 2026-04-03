@@ -144,17 +144,30 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile({String? name, String? profileImageUrl}) async {
+  Future<void> updateProfile({String? name, String? profileImageBase64}) async {
     if (name != null && name.trim().isEmpty) return;
     try {
-      _currentUser = await _authService.updateMe(
+      final newUser = await _authService.updateMe(
         name: (name != null && name.trim().isNotEmpty) ? name : null,
-        profileImageUrl: profileImageUrl,
+        profileImageBase64: profileImageBase64,
       );
-      notifyListeners();
+      _updateUser(newUser);
     } catch (e) {
       debugPrint('Profile update failed: $e');
     }
+  }
+
+  void _updateUser(UserProfile newUser) {
+    if (_currentUser == null) {
+      _currentUser = newUser;
+    } else {
+      _currentUser = newUser.copyWith(
+        availableTimes: newUser.availableTimes.isEmpty ? _currentUser!.availableTimes : newUser.availableTimes,
+        locations: newUser.locations.isEmpty ? _currentUser!.locations : newUser.locations,
+        ageRange: newUser.ageRange == null ? _currentUser!.ageRange : newUser.ageRange,
+      );
+    }
+    notifyListeners();
   }
 
   void removeTag(String tagValue, TagType type) async {
@@ -164,10 +177,10 @@ class HomeViewModel extends ChangeNotifier {
         case TagType.location:
           final updated = List<LocationModel>.from(_currentUser!.locations)
             ..removeWhere((loc) => loc.displayLabel == tagValue);
-          _currentUser = await _authService.updateMe(
+          final newUser = await _authService.updateMe(
             location: updated.isNotEmpty ? updated.first.displayLabel : '',
           );
-          _currentUser = _currentUser?.copyWith(locations: updated);
+          _updateUser(newUser.copyWith(locations: updated));
           break;
         case TagType.time:
           final updated = List<TimeSlot>.from(_currentUser!.availableTimes)
@@ -178,7 +191,8 @@ class HomeViewModel extends ChangeNotifier {
         case TagType.interest:
           final updated = List<String>.from(_currentUser!.interests)
             ..remove(tagValue);
-          _currentUser = await _authService.updateMe(interests: updated);
+          final newUser = await _authService.updateMe(interests: updated);
+          _updateUser(newUser);
           break;
         case TagType.ageRange:
           // Setting null in copyWith/updateMe if supported.
@@ -202,17 +216,20 @@ class HomeViewModel extends ChangeNotifier {
           break;
         case TagType.interest:
           final updated = List<String>.from(_currentUser!.interests)..add(val);
-          _currentUser = await _authService.updateMe(interests: updated);
+          final newUser = await _authService.updateMe(interests: updated);
+          _updateUser(newUser);
           break;
         case TagType.ageRange:
-          _currentUser = await _authService.updateMe(ageRange: val);
+          final newUser = await _authService.updateMe(ageRange: val);
+          _updateUser(newUser);
           break;
         case TagType.gender:
           GenderType? mapped;
           if (val == '남성') mapped = GenderType.male;
           else if (val == '여성') mapped = GenderType.female;
           else mapped = GenderType.other;
-          _currentUser = await _authService.updateMe(gender: mapped);
+          final newUser = await _authService.updateMe(gender: mapped);
+          _updateUser(newUser);
           break;
       }
       notifyListeners();
@@ -243,11 +260,10 @@ class HomeViewModel extends ChangeNotifier {
           updated.removeAt(0);
         }
         updated.add(location);
-        _currentUser = await _authService.updateMe(
+        final newUser = await _authService.updateMe(
           location: updated.first.displayLabel, // Primary location
         );
-        _currentUser = _currentUser?.copyWith(locations: updated);
-        notifyListeners();
+        _updateUser(newUser.copyWith(locations: updated));
       }
     } catch (e) {
       debugPrint('Home: Location addition failed: $e');

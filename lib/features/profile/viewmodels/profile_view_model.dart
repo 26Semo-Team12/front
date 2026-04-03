@@ -43,21 +43,24 @@ class ProfileViewModel extends ChangeNotifier {
         case TagType.location:
           final updated = List<LocationModel>.from(_currentUser!.locations)
             ..removeWhere((loc) => loc.displayLabel == tagValue);
-          _currentUser = await _authService.updateMe(
+          final newUser = await _authService.updateMe(
             location: updated.isNotEmpty ? updated.first.displayLabel : '',
           );
-          _currentUser = _currentUser?.copyWith(locations: updated);
+          _updateUser(newUser.copyWith(locations: updated));
           break;
         case TagType.interest:
           final updated = List<String>.from(_currentUser!.interests)
             ..remove(tagValue);
-          _currentUser = await _authService.updateMe(interests: updated);
+          final newUser = await _authService.updateMe(interests: updated);
+          _updateUser(newUser);
           break;
         case TagType.ageRange:
-          _currentUser = await _authService.updateMe(ageRange: null);
+          final newUser = await _authService.updateMe(ageRange: null);
+          _updateUser(newUser);
           break;
         case TagType.gender:
-          _currentUser = await _authService.updateMe(gender: null);
+          final newUser = await _authService.updateMe(gender: null);
+          _updateUser(newUser);
           break;
         case TagType.time:
           final updated = List<TimeSlot>.from(_currentUser!.availableTimes)
@@ -79,17 +82,20 @@ class ProfileViewModel extends ChangeNotifier {
       switch (type) {
         case TagType.interest:
           final updated = List<String>.from(_currentUser!.interests)..add(val);
-          _currentUser = await _authService.updateMe(interests: updated);
+          final newUser = await _authService.updateMe(interests: updated);
+          _updateUser(newUser);
           break;
         case TagType.ageRange:
-          _currentUser = await _authService.updateMe(ageRange: val);
+          final newUser = await _authService.updateMe(ageRange: val);
+          _updateUser(newUser);
           break;
         case TagType.gender:
           GenderType? mapped;
           if (val == '남성') mapped = GenderType.male;
           else if (val == '여성') mapped = GenderType.female;
           else mapped = GenderType.other;
-          _currentUser = await _authService.updateMe(gender: mapped);
+          final newUser = await _authService.updateMe(gender: mapped);
+          _updateUser(newUser);
           break;
         case TagType.location:
           // addLocation is used for LocationModel specifically
@@ -104,14 +110,28 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfileImage(String imageUrl) async {
+  Future<void> updateProfileImage(String base64Image) async {
     if (_currentUser == null) return;
     try {
-      _currentUser = await _authService.updateMe(profileImageUrl: imageUrl);
-      notifyListeners();
+      final newUser = await _authService.updateMe(profileImageBase64: base64Image);
+      _updateUser(newUser);
     } catch (e) {
       debugPrint('Profile image update failed: $e');
     }
+  }
+
+  void _updateUser(UserProfile newUser) {
+    if (_currentUser == null) {
+      _currentUser = newUser;
+    } else {
+      // 서버에서 주지 않는 정보(availableTimes, locations 등)를 기존 정보에서 복사
+      _currentUser = newUser.copyWith(
+        availableTimes: newUser.availableTimes.isEmpty ? _currentUser!.availableTimes : newUser.availableTimes,
+        locations: newUser.locations.isEmpty ? _currentUser!.locations : newUser.locations,
+        ageRange: newUser.ageRange == null ? _currentUser!.ageRange : newUser.ageRange,
+      );
+    }
+    notifyListeners();
   }
 
   Future<void> updateAvailableTimes(List<TimeSlot> slots) async {
@@ -137,11 +157,10 @@ class ProfileViewModel extends ChangeNotifier {
           updated.removeAt(0);
         }
         updated.add(location);
-        _currentUser = await _authService.updateMe(
+        final newUser = await _authService.updateMe(
           location: updated.first.displayLabel, // Primary location
         );
-        _currentUser = _currentUser?.copyWith(locations: updated);
-        notifyListeners();
+        _updateUser(newUser.copyWith(locations: updated));
       }
     } catch (e) {
       debugPrint('Location addition failed: $e');
@@ -192,7 +211,8 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      _currentUser = await _authService.toggleRandomMode(enabled);
+      final newUser = await _authService.toggleRandomMode(enabled);
+      _updateUser(newUser);
     } catch (e) {
       debugPrint('Random mode toggle failed: $e');
     } finally {

@@ -68,10 +68,10 @@ class AuthService {
     return UserProfile.fromJson(res['data']);
   }
 
-  /// 프로필 수정 (name, profile_image_url, birth_year, gender, region, interests, age_range 등)
+  /// 프로필 수정 (name, profileImageBase64, birth_year, gender, region, interests, age_range 등)
   Future<UserProfile> updateMe({
     String? name,
-    String? profileImageUrl,
+    String? profileImageBase64,
     int? birthYear,
     GenderType? gender,
     String? region,
@@ -83,7 +83,7 @@ class AuthService {
   }) async {
     final body = {
       if (name != null) 'name': name,
-      if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
+      if (profileImageBase64 != null) 'profileImageBase64': profileImageBase64,
       if (birthYear != null) 'birth_year': birthYear,
       if (gender != null) 'gender': gender.value,
       if (region != null) 'region': region,

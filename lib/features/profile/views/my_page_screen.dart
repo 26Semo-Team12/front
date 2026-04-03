@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
@@ -325,17 +328,9 @@ class _ProfileHeader extends StatelessWidget {
   final ProfileViewModel viewModel;
   const _ProfileHeader({required this.user, required this.viewModel});
 
-  void _pickImage(BuildContext context) {
-    // 실제 앱에서는 image_picker 패키지 사용
-    // 여기서는 mock URL 목록으로 시뮬레이션
-    final mockImages = [
-      'https://picsum.photos/seed/user1/200',
-      'https://picsum.photos/seed/user2/200',
-      'https://picsum.photos/seed/user3/200',
-      'https://picsum.photos/seed/user4/200',
-      'https://picsum.photos/seed/user5/200',
-    ];
-    showModalBottomSheet(
+  Future<void> _pickImage(BuildContext context) async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -354,31 +349,38 @@ class _ProfileHeader extends StatelessWidget {
             const SizedBox(height: 16),
             const Text('프로필 사진 변경',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: mockImages.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, i) => GestureDetector(
-                  onTap: () {
-                    viewModel.updateProfileImage(mockImages[i]);
-                    Navigator.pop(ctx);
-                  },
-                  child: SafeCircleAvatar(
-                    radius: 40,
-                    imageUrl: mockImages[i],
-                  ),
-                ),
-              ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('앨범에서 선택'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
-            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('카메라로 촬영'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
     );
+    if (source == null) return;
+
+    final picked = await picker.pickImage(source: source, imageQuality: 80, maxWidth: 800);
+    if (picked == null) return;
+
+    final bytes = await File(picked.path).readAsBytes();
+    final ext = picked.path.split('.').last.toLowerCase();
+    final mime = (ext == 'png') ? 'image/png'
+        : (ext == 'webp') ? 'image/webp'
+        : 'image/jpeg';
+    final base64Str = base64Encode(bytes);
+    final dataUrl = 'data:$mime;base64,$base64Str';
+
+    if (context.mounted) {
+      await viewModel.updateProfileImage(dataUrl);
+    }
   }
 
   @override
@@ -396,7 +398,7 @@ class _ProfileHeader extends StatelessWidget {
               backgroundColor: Colors.grey.shade200,
             ),
             GestureDetector(
-              onTap: () => _pickImage(context),
+              onTap: () => _pickImage(context), // ignore: discarded_futures
               child: Container(
                 width: 28, height: 28,
                 decoration: BoxDecoration(
