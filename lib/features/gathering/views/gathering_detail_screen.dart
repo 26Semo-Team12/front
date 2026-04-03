@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../home/models/invitation.dart';
+import '../../home/viewmodels/home_view_model.dart';
 import '../viewmodels/gathering_detail_view_model.dart';
 import 'mystery_view.dart';
 import 'history_view.dart';
@@ -14,7 +15,12 @@ class GatheringDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => GatheringDetailViewModel(invitation: invitation),
+      create: (ctx) => GatheringDetailViewModel(
+        initialInvitation: invitation,
+        onUpdateGlobalMeta: (id, title, img) {
+          ctx.read<HomeViewModel>().updateInvitationMeta(id, newTitle: title, newImageUrl: img);
+        },
+      ),
       child: Scaffold(
         backgroundColor: Colors.white,
         body: _buildContentForType(invitation.type),
