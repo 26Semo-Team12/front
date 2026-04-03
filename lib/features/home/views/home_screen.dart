@@ -46,9 +46,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     }
 
     return Scaffold(
-      body: Stack(
-        children: [
-          _HomeScrollView(),
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            _HomeScrollView(),
           if (_showAiMcButton)
             Positioned(
               left: 8, right: 8, bottom: 20,
@@ -92,6 +94,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               ),
             ),
         ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.small(
         backgroundColor: _showAiMcButton
@@ -154,6 +157,10 @@ class _HomeScrollView extends StatelessWidget {
         // 초대장 목록
         const _InvitationSliver(),
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        // 하단 시스템 바 공간 확보
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+        ),
       ],
     );
   }
@@ -213,12 +220,12 @@ class _AppBarActions extends StatelessWidget {
 class _FilterRowDelegate extends SliverPersistentHeaderDelegate {
   const _FilterRowDelegate();
 
-  static const double _height = 56.0;
+  static const double _rowHeight = 56.0;
 
   @override
-  double get minExtent => _height;
+  double get minExtent => _rowHeight;
   @override
-  double get maxExtent => _height;
+  double get maxExtent => _rowHeight;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
