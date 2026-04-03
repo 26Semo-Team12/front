@@ -12,6 +12,7 @@ import '../../profile/views/settings_screen.dart';
 
 import '../../notification/views/notification_screen.dart';
 import '../../notification/viewmodels/notification_view_model.dart';
+import '../../../core/utils/image_utils.dart';
 
 // ─── 한글 음절 분해 기반 퍼지 매칭 ─────────────────────────────────────────
 // 한글 유니코드 구조: 음절 = 0xAC00 + (초성 * 21 + 중성) * 28 + 종성
@@ -202,11 +203,10 @@ class UserProfileCard extends StatelessWidget {
             // ── 프로필 헤더 ──
             Row(
               children: [
-                CircleAvatar(
+                SafeCircleAvatar(
                   radius: 30,
-                  backgroundImage: NetworkImage(user.profileImageUrl),
-                ),
-                const SizedBox(width: 15),
+                  imageUrl: user.profileImageUrl,
+                ),                const SizedBox(width: 15),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

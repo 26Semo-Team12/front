@@ -87,7 +87,7 @@ class _SplashScreenContentState extends State<_SplashScreenContent>
               const Spacer(flex: 5),
               // 하단 텍스트 영역
               const Text(
-                'Verture',
+                'Venture',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -97,7 +97,7 @@ class _SplashScreenContentState extends State<_SplashScreenContent>
               ),
               const SizedBox(height: 8),
               const Text(
-                'Intersst, New person, New space',
+                'Interest, New person, New space',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black54,

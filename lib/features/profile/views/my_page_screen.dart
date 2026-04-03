@@ -7,6 +7,7 @@ import '../../home/viewmodels/home_view_model.dart';
 import '../../home/views/location_picker.dart';
 import '../viewmodels/profile_view_model.dart';
 import 'settings_screen.dart';
+import '../../../core/utils/image_utils.dart';
 
 const List<String> kInterestPresets = [
   '등산', '독서', '요리', '여행', '사진', '음악', '영화', '게임', '운동', '카페',
@@ -355,9 +356,9 @@ class _ProfileHeader extends StatelessWidget {
                     viewModel.updateProfileImage(mockImages[i]);
                     Navigator.pop(ctx);
                   },
-                  child: CircleAvatar(
+                  child: SafeCircleAvatar(
                     radius: 40,
-                    backgroundImage: NetworkImage(mockImages[i]),
+                    imageUrl: mockImages[i],
                   ),
                 ),
               ),
@@ -378,13 +379,9 @@ class _ProfileHeader extends StatelessWidget {
         Stack(
           alignment: Alignment.bottomRight,
           children: [
-            CircleAvatar(
+            SafeCircleAvatar(
               radius: 48,
-              backgroundImage: NetworkImage(
-                user.profileImageUrl.isNotEmpty
-                    ? user.profileImageUrl
-                    : 'https://via.placeholder.com/150',
-              ),
+              imageUrl: user.profileImageUrl,
               backgroundColor: Colors.grey.shade200,
             ),
             GestureDetector(

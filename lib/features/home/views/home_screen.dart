@@ -126,19 +126,14 @@ class _HomeScrollView extends StatelessWidget {
           snap: true,
           pinned: false,
           elevation: 0,
+          toolbarHeight: kToolbarHeight,
           backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Icon(Icons.pets, color: Theme.of(context).colorScheme.onSurface),
+          title: Image.asset(
+            'assets/images/logo_2.png',
+            height: 32,
+            fit: BoxFit.contain,
           ),
-          title: Text(
-            '앱 이름',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
+          centerTitle: false,
           actions: const [_AppBarActions()],
         ),
         // 프로필 카드 — 일반 sliver: 끝까지 스크롤해야 나타남

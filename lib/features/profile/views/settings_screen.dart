@@ -87,6 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('설정', style: TextStyle(fontWeight: FontWeight.bold)),
+          toolbarHeight: kToolbarHeight,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),

@@ -48,12 +48,18 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     final viewModel = context.watch<ChatViewModel>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text(widget.gatheringTitle.isNotEmpty ? widget.gatheringTitle : '정기 모임', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(
+          widget.gatheringTitle.isNotEmpty ? widget.gatheringTitle : '정기 모임',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: SafeArea(
         child: Column(
@@ -80,6 +86,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
   }
 
   Widget _buildMessageBubble(ChatMessage msg) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMe = msg.isMe;
 
     if (msg.type == ChatMessageType.system) {
@@ -88,14 +95,17 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
           margin: const EdgeInsets.symmetric(vertical: 12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.grey.shade300,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Text(msg.text, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+          child: Text(msg.text,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white60 : Colors.grey.shade700)),
         ),
       );
     }
-    
+
     if (msg.type == ChatMessageType.aiIcebreaking) {
       return Center(
         child: Container(
@@ -109,10 +119,14 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.auto_awesome, color: Color(0xFFD6706D), size: 18),
+              const Icon(Icons.auto_awesome,
+                  color: Color(0xFFD6706D), size: 18),
               const SizedBox(width: 8),
               Flexible(
-                child: Text(msg.text, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD6706D))),
+                child: Text(msg.text,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFD6706D))),
               ),
             ],
           ),
@@ -123,22 +137,28 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            const CircleAvatar(
+            CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.black87,
-              child: Icon(Icons.person, color: Colors.white, size: 20),
+              backgroundColor: isDark ? Colors.white24 : Colors.black87,
+              child: const Icon(Icons.person, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isMe ? const Color(0xFFD6706D) : Colors.grey.shade200,
+                color: isMe
+                    ? const Color(0xFFD6706D)
+                    : (isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.grey.shade200),
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -149,7 +169,9 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
               child: Text(
                 msg.text,
                 style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black87,
+                  color: isMe
+                      ? Colors.white
+                      : (isDark ? Colors.white70 : Colors.black87),
                   fontSize: 15,
                 ),
               ),
@@ -164,7 +186,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     if (viewModel.aiTemplates.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -191,16 +213,21 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
   }
 
   Widget _buildInputArea(ChatViewModel viewModel) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        color: cs.surface,
+        border: Border(
+            top: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey.shade300)),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.add, color: Colors.black54),
+            icon: Icon(Icons.add,
+                color: isDark ? Colors.white54 : Colors.black54),
             onPressed: () => _showAttachmentMenu(context),
           ),
           const SizedBox(width: 4),
@@ -213,9 +240,12 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
-                fillColor: Colors.grey.shade100,
+                fillColor: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.grey.shade100,
                 filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 10),
               ),
               onSubmitted: (_) => _handleSend(viewModel),
             ),
@@ -239,23 +269,28 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
   void _showAttachmentMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return Padding(
-          padding: const EdgeInsets.only(top: 24, bottom: 40, left: 24, right: 24),
+          padding: const EdgeInsets.only(
+              top: 24, bottom: 40, left: 24, right: 24),
           child: Wrap(
             spacing: 32,
             runSpacing: 24,
             alignment: WrapAlignment.center,
             children: [
               _buildAttachItem(ctx, Icons.image, '사진', () => _pickImage(ctx)),
-              _buildAttachItem(ctx, Icons.videocam, '동영상', () => _pickVideo(ctx)),
-              _buildAttachItem(ctx, Icons.attach_file, '파일', () => _pickFile(ctx)),
-              _buildAttachItem(ctx, Icons.calendar_today, '일정', () => _pickSchedule(ctx)),
-              _buildAttachItem(ctx, Icons.casino, '사다리타기', () => _playMinigame(ctx)),
+              _buildAttachItem(
+                  ctx, Icons.videocam, '동영상', () => _pickVideo(ctx)),
+              _buildAttachItem(
+                  ctx, Icons.attach_file, '파일', () => _pickFile(ctx)),
+              _buildAttachItem(
+                  ctx, Icons.calendar_today, '일정', () => _pickSchedule(ctx)),
+              _buildAttachItem(
+                  ctx, Icons.casino, '사다리타기', () => _playMinigame(ctx)),
             ],
           ),
         );
@@ -263,7 +298,9 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     );
   }
 
-  Widget _buildAttachItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+  Widget _buildAttachItem(BuildContext context, IconData icon, String label,
+      VoidCallback onTap) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -279,7 +316,8 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
             child: Icon(icon, color: const Color(0xFFD6706D), size: 28),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+          Text(label,
+              style: TextStyle(fontSize: 12, color: cs.onSurface)),
         ],
       ),
     );
