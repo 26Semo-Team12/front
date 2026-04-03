@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/gathering_detail_view_model.dart';
+import '../../evaluation/views/evaluation_screen.dart';
+import '../../../core/models/user_profile.dart';
 
 class HistoryView extends StatelessWidget {
   const HistoryView({super.key});
@@ -73,6 +75,42 @@ class HistoryView extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: ElevatedButton(
+            onPressed: () {
+              final mockParticipants = [
+                UserProfile(id: 1, email: 'me@test.com', name: '나자신', region: '서울', profileImageUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=1'),
+                UserProfile(id: 2, email: 'lee@test.com', name: '이민호', region: '서울', profileImageUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=2'),
+                UserProfile(id: 3, email: 'kim@test.com', name: '김지은', region: '서울', profileImageUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=3'),
+                UserProfile(id: 4, email: 'park@test.com', name: '박서준', region: '서울', profileImageUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=4'),
+              ];
+              
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EvaluationScreen(
+                    gatheringId: inv.id,
+                    participants: mockParticipants,
+                    currentUserId: 1,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD6706D),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: const Text(
+              '팀원 평가하기',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
         ),
       ),
     );

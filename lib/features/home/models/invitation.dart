@@ -20,4 +20,19 @@ class Invitation {
     this.imageUrl,
     required this.memberCount,
   });
+
+  Invitation copyWith({
+    String? title,
+    String? imageUrl,
+  }) {
+    return Invitation(
+      id: id,
+      type: type,
+      title: title ?? this.title,
+      dateTime: dateTime,
+      location: location,
+      imageUrl: imageUrl ?? this.imageUrl,
+      memberCount: memberCount,
+    );
+  }
 }

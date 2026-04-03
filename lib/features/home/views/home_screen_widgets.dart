@@ -7,9 +7,11 @@ import '../../../core/models/tag_colors.dart';
 import '../models/invitation.dart';
 import '../viewmodels/home_view_model.dart';
 import '../../gathering/views/gathering_detail_screen.dart';
-import '../../settings/views/settings_screen.dart';
-import 'location_picker.dart';
-import 'time_picker.dart';
+import '../../profile/views/my_page_screen.dart';
+import '../../profile/views/settings_screen.dart';
+
+import '../../notification/views/notification_screen.dart';
+import '../../notification/viewmodels/notification_view_model.dart';
 
 // ─── 한글 음절 분해 기반 퍼지 매칭 ─────────────────────────────────────────
 // 한글 유니코드 구조: 음절 = 0xAC00 + (초성 * 21 + 중성) * 28 + 종성
@@ -126,6 +128,33 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
       ),
       actions: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_none, color: Colors.black),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                );
+              },
+            ),
+            if (context.select<NotificationViewModel, bool>((vm) => vm.hasUnread))
+              Positioned(
+                right: 12,
+                top: 12,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD6706D),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
         IconButton(
           icon: const Icon(Icons.settings, color: Colors.black),
           onPressed: () => Navigator.push(
@@ -133,264 +162,96 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             MaterialPageRoute(builder: (_) => const SettingsScreen()),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }
 }
 
-// ─── UserProfileCard ─────────────────────────────────────────────────────────
+// ─── UserProfileCard (읽기 전용 요약 카드) ────────────────────────────────────
 class UserProfileCard extends StatelessWidget {
   final UserProfile user;
   const UserProfileCard({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    // context.read: 구독 없이 한 번만 읽음 → 필터 변경 시 이 위젯 리빌드 없음
-    final viewModel = context.read<HomeViewModel>();
     const cardColor = Color(0xFFD6706D);
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MyPageScreen()),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── 프로필 헤더 ──
-          Row(
-            children: [
-              // 프로필 사진 + 편집 버튼
-              GestureDetector(
-                onTap: () => _showProfileEditDialog(context, viewModel),
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundImage: NetworkImage(user.profileImageUrl),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.edit, size: 13, color: Color(0xFFD6706D)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _showProfileEditDialog(context, viewModel),
-                      child: const Icon(Icons.edit, color: Colors.white, size: 16),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // ── 태그 영역 ──
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 120),
-            child: SingleChildScrollView(
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  // location 태그들
-                  ...user.locations.map((loc) => UserProfileTag(
-                        text: loc.displayLabel,
-                        color: kTagColors[TagType.location]!,
-                        onDelete: () =>
-                            viewModel.removeTag(loc.displayLabel, TagType.location),
-                        onTap: (ctx) => showDialog(
-                          context: ctx,
-                          builder: (_) => LocationPicker(
-                            onSelected: (newLoc) {
-                              viewModel.removeTag(loc.displayLabel, TagType.location);
-                              viewModel.addLocation(newLoc);
-                            },
-                          ),
-                        ),
-                      )),
-                  // location 추가 버튼 (3개 미만일 때만)
-                  if (user.locations.length < 3)
-                    _LabeledAddButton(
-                      label: '모임 위치 추가',
-                      onTap: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => LocationPicker(
-                          onSelected: (loc) => viewModel.addLocation(loc),
-                        ),
-                      ),
-                    ),
-
-                  // time 태그 — 슬롯이 있으면 단일 태그(편집 아이콘), 없으면 추가 버튼
-                  if (user.availableTimes.isNotEmpty)
-                    _TimeTag(
-                      onEdit: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => TimePicker(
-                          initialSlots: user.availableTimes,
-                          onConfirm: (slots) =>
-                              viewModel.updateAvailableTimes(slots),
-                        ),
-                      ),
-                    )
-                  else
-                    _LabeledAddButton(
-                      label: '모임 가능 시간 추가',
-                      onTap: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => TimePicker(
-                          initialSlots: const [],
-                          onConfirm: (slots) =>
-                              viewModel.updateAvailableTimes(slots),
-                        ),
-                      ),
-                    ),
-
-                  // gender 태그
-                  if (user.gender != null)
-                    UserProfileTag(
-                      text: user.gender!.displayName,
-                      color: kTagColors[TagType.gender]!,
-                      onDelete: () =>
-                          viewModel.removeTag(user.gender!.displayName, TagType.gender),
-                      onTap: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => TagEditDialog(
-                          viewModel: viewModel,
-                          initialType: TagType.gender,
-                        ),
-                      ),
-                    ),
-                  if (user.gender == null)
-                    _LabeledAddButton(
-                      label: '성별 추가',
-                      onTap: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => TagEditDialog(
-                          viewModel: viewModel,
-                          initialType: TagType.gender,
-                        ),
-                      ),
-                    ),
-
-                  // ageRange 태그
-                  if (user.ageRange?.isNotEmpty ?? false)
-                    UserProfileTag(
-                      text: user.ageRange!,
-                      color: kTagColors[TagType.ageRange]!,
-                      onDelete: () =>
-                          viewModel.removeTag(user.ageRange!, TagType.ageRange),
-                      onTap: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => TagEditDialog(
-                          viewModel: viewModel,
-                          initialType: TagType.ageRange,
-                        ),
-                      ),
-                    ),
-                  if (!(user.ageRange?.isNotEmpty ?? false))
-                    _LabeledAddButton(
-                      label: '연령 추가',
-                      onTap: (ctx) => showDialog(
-                        context: ctx,
-                        builder: (_) => TagEditDialog(
-                          viewModel: viewModel,
-                          initialType: TagType.ageRange,
-                        ),
-                      ),
-                    ),
-
-                  // interest 태그들
-                  ...user.interests.map((interest) => UserProfileTag(
-                        text: interest,
-                        color: kTagColors[TagType.interest]!,
-                        onDelete: () =>
-                            viewModel.removeTag(interest, TagType.interest),
-                      )),
-                  _LabeledAddButton(
-                    label: '관심사 추가',
-                    onTap: (ctx) => showDialog(
-                      context: ctx,
-                      builder: (_) => TagEditDialog(
-                        viewModel: viewModel,
-                        initialType: TagType.interest,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showProfileEditDialog(BuildContext context, HomeViewModel viewModel) {
-    showDialog(
-      context: context,
-      builder: (_) => _ProfileEditDialog(viewModel: viewModel),
-    );
-  }
-}
-
-// ─── _LabeledAddButton ───────────────────────────────────────────────────────
-class _LabeledAddButton extends StatelessWidget {
-  final String label;
-  final void Function(BuildContext) onTap;
-  const _LabeledAddButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onTap(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
+          ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.add, size: 12, color: Colors.white),
-            const SizedBox(width: 4),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
+            // ── 프로필 헤더 ──
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage(user.profileImageUrl),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Colors.white70),
+                          const SizedBox(width: 4),
+                          Text(
+                            '신뢰도 ${user.reputationScore}점',
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white70),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // ── 태그 요약 (읽기 전용) ──
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                ...user.locations.map((loc) => _ReadOnlyTag(text: loc.displayLabel, color: kTagColors[TagType.location]!)),
+                if (user.availableTimes.isNotEmpty)
+                  _ReadOnlyTag(text: '모임 가능 시간', color: kTagColors[TagType.time]!),
+                if (user.gender != null)
+                  _ReadOnlyTag(text: user.gender!.displayName, color: kTagColors[TagType.gender]!),
+                if (user.ageRange?.isNotEmpty ?? false)
+                  _ReadOnlyTag(text: user.ageRange!, color: kTagColors[TagType.ageRange]!),
+                ...user.interests.map((i) => _ReadOnlyTag(text: i, color: kTagColors[TagType.interest]!)),
+              ],
+            ),
           ],
         ),
       ),
@@ -398,100 +259,26 @@ class _LabeledAddButton extends StatelessWidget {
   }
 }
 
-// ─── _TimeTag (편집 아이콘, 삭제 없음) ──────────────────────────────────────
-class _TimeTag extends StatelessWidget {
-  final void Function(BuildContext) onEdit;
-  const _TimeTag({required this.onEdit});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onEdit(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: kTagColors[TagType.time]!,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text('모임 가능 시간',
-                style: TextStyle(color: Colors.white, fontSize: 12)),
-            SizedBox(width: 4),
-            Icon(Icons.edit, size: 12, color: Colors.white70),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── UserProfileTag ──────────────────────────────────────────────────────────
-class UserProfileTag extends StatelessWidget {
+// ─── _ReadOnlyTag (편집/삭제 없는 순수 표시용 태그) ─────────────────────────────
+class _ReadOnlyTag extends StatelessWidget {
   final String text;
   final Color color;
-  final VoidCallback onDelete;
-  final void Function(BuildContext)? onTap; // 탭 시 편집 (시간 태그용)
-
-  const UserProfileTag({
-    super.key,
-    required this.text,
-    this.color = const Color(0xFFE05C5C),
-    required this.onDelete,
-    this.onTap,
-  });
+  const _ReadOnlyTag({required this.text, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap != null ? () => onTap!(context) : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap: onDelete,
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(15),
       ),
+      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
     );
   }
 }
 
-// ─── _ProfileEditDialog (빈 팝업) ────────────────────────────────────────────
-class _ProfileEditDialog extends StatelessWidget {
-  final HomeViewModel viewModel;
-  const _ProfileEditDialog({required this.viewModel});
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('프로필 편집'),
-      content: const SizedBox(
-        height: 80,
-        child: Center(
-          child: Text('편집 기능 준비 중입니다.', style: TextStyle(color: Colors.grey)),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('닫기'),
-        ),
-      ],
-    );
-  }
-}
 
 // ─── TagEditDialog ───────────────────────────────────────────────────────────
 /// 성별/연령/관심사 선택 다이얼로그

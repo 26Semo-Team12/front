@@ -132,4 +132,15 @@ class HomeViewModel extends ChangeNotifier {
     _currentPageIndex = index;
     notifyListeners();
   }
+
+  void updateInvitationMeta(String id, {String? newTitle, String? newImageUrl}) {
+    final index = _invitations.indexWhere((inv) => inv.id == id);
+    if (index != -1) {
+      _invitations[index] = _invitations[index].copyWith(
+        title: newTitle,
+        imageUrl: newImageUrl,
+      );
+      notifyListeners();
+    }
+  }
 }

@@ -42,82 +42,8 @@ Widget _buildTestApp({required Widget child, required HomeViewModel viewModel}) 
 // ─────────────────────────────────────────────
 
 void main() {
-  // ─────────────────────────────────────────────
-  // UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출 검증
-  // 검증 대상: 요구사항 3.1
-  // ─────────────────────────────────────────────
-  group('UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출', () {
-    testWidgets('X 버튼(Icons.close) 탭 시 onDelete 콜백이 호출됨', (tester) async {
-      // Validates: Requirements 3.1
-      bool callbackCalled = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: UserProfileTag(
-              text: '등산',
-              onDelete: () {
-                callbackCalled = true;
-              },
-            ),
-          ),
-        ),
-      );
-
-      // Icons.close 아이콘이 렌더링되는지 확인
-      expect(find.byIcon(Icons.close), findsOneWidget);
-
-      // X 버튼 탭
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pump();
-
-      expect(callbackCalled, isTrue, reason: 'X 버튼 탭 시 onDelete 콜백이 호출되어야 함');
-    });
-
-    testWidgets('태그 텍스트가 올바르게 표시됨', (tester) async {
-      // Validates: Requirements 3.1
-      const tagText = '독서';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: UserProfileTag(
-              text: tagText,
-              onDelete: () {},
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text(tagText), findsOneWidget);
-      expect(find.byIcon(Icons.close), findsOneWidget);
-    });
-
-    testWidgets('여러 번 탭해도 매번 onDelete 콜백이 호출됨', (tester) async {
-      // Validates: Requirements 3.1
-      int callCount = 0;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: UserProfileTag(
-              text: '요리',
-              onDelete: () {
-                callCount++;
-              },
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pump();
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pump();
-
-      expect(callCount, equals(2), reason: '두 번 탭하면 onDelete가 두 번 호출되어야 함');
-    });
-  });
+  // UserProfileTag tests removed — widget moved to read-only _ReadOnlyTag
+  // Profile editing is now handled in MyPageScreen
 
   // ─────────────────────────────────────────────
   // 속성 4: 다이얼로그/팝업 취소 시 상태 불변
