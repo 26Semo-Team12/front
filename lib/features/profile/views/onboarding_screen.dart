@@ -329,7 +329,7 @@ class _Step2ViewState extends State<_Step2View> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '관심사를\n선택해주세요',
+            '관심사를 선택해주세요',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -494,8 +494,7 @@ class _RowChips extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: chips,
           ),
-        );
-      },
+        );      },
     );
   }
 
@@ -503,6 +502,8 @@ class _RowChips extends StatelessWidget {
     const chipHPad = 12.0;   // FilterChip 내부 좌우 패딩
     const chipSpacing = 8.0; // 칩 사이 간격
     const fontSize = 14.0;
+    // FilterChip은 label 외에 내부 Material 패딩이 추가되므로 여유값 포함
+    const chipExtraWidth = 16.0;
 
     final style = TextStyle(fontSize: fontSize);
     final result = <Widget>[];
@@ -515,7 +516,7 @@ class _RowChips extends StatelessWidget {
         maxLines: 1,
         textDirection: TextDirection.ltr,
       )..layout();
-      final chipWidth = tp.width + chipHPad * 2 + 8; // 8 = 체크마크 여유
+      final chipWidth = tp.width + chipHPad * 2 + chipExtraWidth;
       final needed = result.isEmpty ? chipWidth : chipWidth + chipSpacing;
 
       if (usedWidth + needed > maxWidth) break;
@@ -530,7 +531,7 @@ class _RowChips extends StatelessWidget {
         label: Text(item, style: const TextStyle(fontSize: fontSize)),
         selected: isSelected,
         selectedColor: const Color(0xFFD6706D),
-        checkmarkColor: Colors.white,
+        showCheckmark: false,
         labelStyle: TextStyle(
           color: isSelected ? Colors.white : Colors.black87,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

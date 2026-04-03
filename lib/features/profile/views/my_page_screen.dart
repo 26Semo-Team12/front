@@ -61,57 +61,59 @@ class _MyPageContent extends StatelessWidget {
           const SizedBox(width: 4),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            _ProfileHeader(user: user, viewModel: viewModel),
-            const SizedBox(height: 32),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSection(
-                    context: context,
-                    title: '주 활동 지역',
-                    onEdit: () => showDialog(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              _ProfileHeader(user: user, viewModel: viewModel),
+              const SizedBox(height: 32),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSection(
                       context: context,
-                      builder: (_) => LocationPicker(
-                        onSelected: (loc) => viewModel.addLocation(loc),
+                      title: '주 활동 지역',
+                      onEdit: () => showDialog(
+                        context: context,
+                        builder: (_) => LocationPicker(
+                          onSelected: (loc) => viewModel.addLocation(loc),
+                        ),
                       ),
+                      child: _buildLocationChips(user, viewModel, cs),
                     ),
-                    child: _buildLocationChips(user, viewModel, cs),
-                  ),
-                  const SizedBox(height: 28),
-                  _buildSection(
-                    context: context,
-                    title: '나의 관심사',
-                    onEdit: () => showDialog(
+                    const SizedBox(height: 28),
+                    _buildSection(
                       context: context,
-                      builder: (_) => _InterestPickerDialog(viewModel: viewModel),
+                      title: '나의 관심사',
+                      onEdit: () => showDialog(
+                        context: context,
+                        builder: (_) => _InterestPickerDialog(viewModel: viewModel),
+                      ),
+                      child: _buildInterestChips(user, viewModel),
                     ),
-                    child: _buildInterestChips(user, viewModel),
-                  ),
-                  const SizedBox(height: 28),
-                  _buildSection(
-                    context: context,
-                    title: '모임 가능 시간',
-                    onEdit: () => _showTimeSlotPicker(context, user, viewModel),
-                    child: _buildTimeChips(user, cs),
-                  ),
-                  const SizedBox(height: 28),
-                  _buildSection(
-                    context: context,
-                    title: '기본 정보',
-                    onEdit: null,
-                    child: _buildInfoChips(user),
-                  ),
-                  const SizedBox(height: 40),
-                ],
+                    const SizedBox(height: 28),
+                    _buildSection(
+                      context: context,
+                      title: '모임 가능 시간',
+                      onEdit: () => _showTimeSlotPicker(context, user, viewModel),
+                      child: _buildTimeChips(user, cs),
+                    ),
+                    const SizedBox(height: 28),
+                    _buildSection(
+                      context: context,
+                      title: '기본 정보',
+                      onEdit: null,
+                      child: _buildInfoChips(user),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -508,49 +510,71 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return AlertDialog(
+    return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      title: const Text('관심사 추가', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      content: SizedBox(
-        width: double.maxFinite,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.55,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _searchController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: '관심사 검색...',
-                prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
-                        onPressed: () => _searchController.clear(),
-                      )
-                    : null,
-                filled: true,
-                fillColor: cs.onSurface.withValues(alpha: 0.06),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+            // 헤더 + X버튼
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 12, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('관심사 추가',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: TextField(
+                controller: _searchController,
+                autofocus: false,
+                decoration: InputDecoration(
+                  hintText: '관심사 검색...',
+                  prefixIcon:
+                      const Icon(Icons.search, size: 20, color: Colors.grey),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear,
+                              size: 18, color: Colors.grey),
+                          onPressed: () => _searchController.clear(),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: cs.onSurface.withValues(alpha: 0.06),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
             const SizedBox(height: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300),
+            Expanded(
               child: _filtered.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Text('검색 결과가 없습니다.',
-                          style: TextStyle(color: Colors.grey)),
+                      child: Center(
+                        child: Text('검색 결과가 없습니다.',
+                            style: TextStyle(color: Colors.grey)),
+                      ),
                     )
                   : ListView.builder(
-                      shrinkWrap: true,
                       itemCount: _filtered.length,
                       itemBuilder: (_, i) {
                         final item = _filtered[i];
@@ -559,7 +583,9 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
                             false;
                         return ListTile(
                           dense: true,
-                          title: Text(item, style: const TextStyle(fontSize: 15)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                          title:
+                              Text(item, style: const TextStyle(fontSize: 15)),
                           trailing: added
                               ? const Icon(Icons.check_circle,
                                   color: Color(0xFFD6706D), size: 20)
@@ -568,7 +594,8 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
                           onTap: added
                               ? null
                               : () {
-                                  widget.viewModel.addTag(item, TagType.interest);
+                                  widget.viewModel
+                                      .addTag(item, TagType.interest);
                                   Navigator.pop(context);
                                 },
                         );
@@ -578,13 +605,6 @@ class _InterestPickerDialogState extends State<_InterestPickerDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('닫기',
-              style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
-        ),
-      ],
     );
   }
 }

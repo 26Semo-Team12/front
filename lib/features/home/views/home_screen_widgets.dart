@@ -232,8 +232,6 @@ class UserProfileCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 ...user.locations.map((loc) => _ReadOnlyTag(text: loc.displayLabel, color: kTagColors[TagType.location]!)),
-                if (user.availableTimes.isNotEmpty)
-                  _ReadOnlyTag(text: '모임 가능 시간', color: kTagColors[TagType.time]!),
                 if (user.gender != null)
                   _ReadOnlyTag(text: user.gender!.displayName, color: kTagColors[TagType.gender]!),
                 if (user.ageRange?.isNotEmpty ?? false)
