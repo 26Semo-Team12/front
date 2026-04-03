@@ -3,6 +3,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/models/enums.dart';
 
 /// 회원가입/로그인을 담당하는 서비스 레이어
 class AuthService {
@@ -62,6 +63,42 @@ class AuthService {
     await prefs.remove('access_token');
   }
   
+  /// 랜덤 모드 토글 (matching_mode = RANDOM | INTEREST)
+  Future<UserProfile> toggleRandomMode(bool enabled) async {
+    final res = await _apiClient.patch('/auth/me/random-mode', body: {'enabled': enabled});
+    return UserProfile.fromJson(res['data']);
+  }
+
+  /// 프로필 수정 (name, profile_image_url, birth_year, gender, region, interests, age_range 등)
+  Future<UserProfile> updateMe({
+    String? name,
+    String? profileImageUrl,
+    int? birthYear,
+    GenderType? gender,
+    String? region,
+    List<String>? interests,
+    String? ageRange,
+    int? age,
+    String? location,
+    String? preferredSize,
+  }) async {
+    final body = {
+      if (name != null) 'name': name,
+      if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
+      if (birthYear != null) 'birth_year': birthYear,
+      if (gender != null) 'gender': gender.value,
+      if (region != null) 'region': region,
+      if (interests != null) 'interests': interests,
+      if (ageRange != null) 'age_range': ageRange,
+      if (age != null) 'age': age,
+      if (location != null) 'location': location,
+      if (preferredSize != null) 'preferredSize': preferredSize,
+    };
+
+    final res = await _apiClient.patch('/auth/me', body: body);
+    return UserProfile.fromJson(res['data']);
+  }
+
   /// 현재 로그인 되어있는지 토큰 유무로 검사
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();

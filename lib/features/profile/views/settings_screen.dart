@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/profile_view_model.dart';
-import '../../../core/services/mock_api_service.dart';
+import '../../auth/services/auth_service.dart';
 import '../../../core/viewmodels/theme_view_model.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final themeVm = context.watch<ThemeViewModel>();
 
     return ChangeNotifierProvider(
-      create: (_) => ProfileViewModel(MockApiService.instance),
+      create: (_) => ProfileViewModel(AuthService()),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('설정', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -112,6 +112,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const Color(0xFFD6706D).withValues(alpha: 0.4),
                     value: themeVm.isDark,
                     onChanged: themeVm.toggle,
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.shuffle),
+                    title: const Text('랜덤 매칭 모드',
+                        style: TextStyle(fontSize: 16)),
+                    subtitle: Text(
+                      (viewModel.currentUser?.isRandomModeEnabled ?? false)
+                          ? '일반 매칭 대신 랜덤 매칭을 사용합니다'
+                          : '관심사 기반 매칭을 사용합니다',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                    ),
+                    activeThumbColor: const Color(0xFFD6706D),
+                    activeTrackColor:
+                        const Color(0xFFD6706D).withValues(alpha: 0.4),
+                    value: viewModel.currentUser?.isRandomModeEnabled ?? false,
+                    onChanged: (val) => viewModel.toggleRandomMode(val),
                   ),
                   const _Divider(),
 

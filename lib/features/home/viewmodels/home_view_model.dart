@@ -3,15 +3,15 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/enums.dart';
-import '../../../core/services/mock_api_service.dart';
 import '../../auth/services/auth_service.dart';
+import '../../gathering/services/invite_service.dart';
 import '../models/invitation.dart';
 
 enum TagType { location, time, gender, ageRange, interest }
 
 class HomeViewModel extends ChangeNotifier {
-  final MockApiService _apiService;
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
+  final InviteService _inviteService;
   UserProfile? _currentUser;
   List<Invitation> _invitations = [];
   // 멀티 셀렉트 필터: 기본값 = 새 초대장 + 장기 모임 활성화
@@ -23,7 +23,7 @@ class HomeViewModel extends ChangeNotifier {
   Set<InvitationType> get activeFilters => Set.unmodifiable(_activeFilters);
   int _currentPageIndex = 0;
 
-  HomeViewModel(this._apiService);
+  HomeViewModel(this._authService, this._inviteService);
 
   InvitationType? get activeFilter => null; // 하위 호환용 (미사용)
   int get currentPageIndex => _currentPageIndex;
@@ -40,11 +40,11 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> init() async {
     try {
       _currentUser = await _authService.getMe();
+      final realInvites = await _inviteService.getMyInvitations();
+      _invitations = realInvites.map((e) => Invitation.fromJson(e)).toList();
     } catch (e) {
-      debugPrint('AuthService.getMe() failed: $e');
-      _currentUser = await _apiService.getMe();
+      debugPrint('HomeViewModel.init() failed: $e');
     }
-    _invitations = await _apiService.getInvitations();
     notifyListeners();
   }
 
@@ -59,79 +59,110 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> updateProfile({String? name, String? profileImageUrl}) async {
     if (name != null && name.trim().isEmpty) return;
-    _currentUser = await _apiService.patchMe(
-      name: (name != null && name.trim().isNotEmpty) ? name : null,
-      profileImageUrl: profileImageUrl,
-    );
-    notifyListeners();
+    try {
+      _currentUser = await _authService.updateMe(
+        name: (name != null && name.trim().isNotEmpty) ? name : null,
+        profileImageUrl: profileImageUrl,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Profile update failed: $e');
+    }
   }
 
-  void removeTag(String tagValue, TagType type) {
+  void removeTag(String tagValue, TagType type) async {
     if (_currentUser == null) return;
-    switch (type) {
-      case TagType.location:
-        final updatedLocs = List<LocationModel>.from(_currentUser!.locations)
-          ..removeWhere((loc) => loc.displayLabel == tagValue);
-        _apiService.patchMe(locations: updatedLocs);
-        _currentUser = _currentUser!.copyWith(locations: updatedLocs);
-      case TagType.time:
-        final updatedTimes = List<TimeSlot>.from(_currentUser!.availableTimes)
-          ..removeWhere((slot) => slot.displayLabel == tagValue);
-        _apiService.patchMe(availableTimes: updatedTimes);
-        _currentUser = _currentUser!.copyWith(availableTimes: updatedTimes);
-      case TagType.interest:
-        final updated = List<String>.from(_currentUser!.interests)
-          ..remove(tagValue);
-        _apiService.patchMe(interests: updated);
-        _currentUser = _currentUser!.copyWith(interests: updated);
-      case TagType.ageRange:
-        _apiService.patchMe(ageRange: null);
-        _currentUser = _currentUser!.copyWith(ageRange: null);
-      case TagType.gender:
-        _apiService.patchMe(gender: null);
-        _currentUser = _currentUser!.copyWith(gender: null);
+    try {
+      switch (type) {
+        case TagType.location:
+          final updated = List<LocationModel>.from(_currentUser!.locations)
+            ..removeWhere((loc) => loc.displayLabel == tagValue);
+          _currentUser = await _authService.updateMe(
+            location: updated.isNotEmpty ? updated.first.displayLabel : '',
+          );
+          _currentUser = _currentUser?.copyWith(locations: updated);
+          break;
+        case TagType.time:
+          final updated = List<TimeSlot>.from(_currentUser!.availableTimes)
+            ..removeWhere((slot) => slot.displayLabel == tagValue);
+          // Backend doesn't support availableTimes yet, keeping state updated locally.
+          _currentUser = _currentUser?.copyWith(availableTimes: updated);
+          break;
+        case TagType.interest:
+          final updated = List<String>.from(_currentUser!.interests)
+            ..remove(tagValue);
+          _currentUser = await _authService.updateMe(interests: updated);
+          break;
+        case TagType.ageRange:
+          // Setting null in copyWith/updateMe if supported.
+          break;
+        case TagType.gender:
+          break;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Tag removal failed: $e');
     }
-    notifyListeners();
   }
 
   Future<void> addTag(String tagValue, TagType type) async {
     final val = tagValue.trim();
-    if (val.isEmpty) return;
-    if (_currentUser == null) return;
-    switch (type) {
-      case TagType.location:
-      case TagType.time:
-        break;
-      case TagType.interest:
-        final updated = List<String>.from(_currentUser!.interests)
-          ..add(val);
-        _currentUser = await _apiService.patchMe(interests: updated);
-      case TagType.ageRange:
-        _currentUser = await _apiService.patchMe(ageRange: val);
-      case TagType.gender:
-        GenderType? mapped;
-        if (val == '남성') mapped = GenderType.male;
-        else if (val == '여성') mapped = GenderType.female;
-        else mapped = GenderType.other;
-        _currentUser = await _apiService.patchMe(gender: mapped);
+    if (val.isEmpty || _currentUser == null) return;
+    try {
+      switch (type) {
+        case TagType.location:
+        case TagType.time:
+          break;
+        case TagType.interest:
+          final updated = List<String>.from(_currentUser!.interests)..add(val);
+          _currentUser = await _authService.updateMe(interests: updated);
+          break;
+        case TagType.ageRange:
+          _currentUser = await _authService.updateMe(ageRange: val);
+          break;
+        case TagType.gender:
+          GenderType? mapped;
+          if (val == '남성') mapped = GenderType.male;
+          else if (val == '여성') mapped = GenderType.female;
+          else mapped = GenderType.other;
+          _currentUser = await _authService.updateMe(gender: mapped);
+          break;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Tag addition failed: $e');
     }
-    notifyListeners();
   }
 
   Future<void> updateAvailableTimes(List<TimeSlot> slots) async {
     if (_currentUser == null) return;
-    _currentUser = await _apiService.patchMe(availableTimes: slots);
-    notifyListeners();
+    try {
+      // Backend doesn't support availableTimes yet, keeping state updated locally.
+      _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Home: Available times update failed: $e');
+    }
   }
 
   Future<void> addLocation(LocationModel location) async {
     if (_currentUser == null) return;
-    final current = _currentUser!.locations;
-    if (current.length >= 3) return;
-    if (current.contains(location)) return;
-    final updated = List<LocationModel>.from(current)..add(location);
-    _currentUser = await _apiService.patchMe(locations: updated);
-    notifyListeners();
+    try {
+      final updated = List<LocationModel>.from(_currentUser!.locations);
+      if (!updated.contains(location)) {
+        if (updated.length >= 3) {
+          updated.removeAt(0);
+        }
+        updated.add(location);
+        _currentUser = await _authService.updateMe(
+          location: updated.first.displayLabel, // Primary location
+        );
+        _currentUser = _currentUser?.copyWith(locations: updated);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Home: Location addition failed: $e');
+    }
   }
 
   void changePage(int index) {

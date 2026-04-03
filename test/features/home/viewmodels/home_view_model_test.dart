@@ -10,6 +10,8 @@ import 'package:front/core/services/mock_api_service.dart';
 import 'package:front/features/home/viewmodels/home_view_model.dart';
 import 'package:front/core/models/enums.dart';
 import 'package:front/features/home/models/invitation.dart';
+import 'package:front/features/auth/services/auth_service.dart';
+import 'package:front/features/gathering/services/invite_service.dart';
 
 // ─────────────────────────────────────────────
 // 헬퍼 함수
@@ -48,7 +50,7 @@ InvitationType _randomInvitationType(Random rng) {
 
 /// MockApiService를 초기화하고 HomeViewModel을 생성 후 init() 호출
 Future<HomeViewModel> _createViewModel(MockApiService service) async {
-  final vm = HomeViewModel(service);
+  final vm = HomeViewModel(AuthService(), InviteService());
   await vm.init();
   return vm;
 }
@@ -346,7 +348,7 @@ void main() {
   Glados2(any.letters, any.letters).test(
     'addLocation rejects duplicates',
     (province, district) async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       final location = LocationModel(province: province, district: district);
       await vm.addLocation(location);
@@ -365,7 +367,7 @@ void main() {
   // Feature: profile-tag-system, Property 5: 시간 태그 전체 교체
   // Validates: Requirements 4.4, 8.2, 8.5
   test('updateAvailableTimes replaces availableTimes completely', () async {
-    final vm = HomeViewModel(MockApiService());
+    final vm = HomeViewModel(AuthService(), InviteService());
     await vm.init();
     final newSlots = [
       TimeSlot(weekday: 1, hourIndex: 10),
@@ -380,7 +382,7 @@ void main() {
   Glados2(any.int, any.int).test(
     'updateAvailableTimes replaces with arbitrary slots',
     (weekday, hourIndex) async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       final slot = TimeSlot(weekday: weekday.abs() % 7, hourIndex: hourIndex.abs() % 24);
       await vm.updateAvailableTimes([slot]);
@@ -395,7 +397,7 @@ void main() {
   // ─────────────────────────────────────────────
   group('Property 6: 태그 삭제 후 목록에서 제거', () {
     test('removeTag(location) 후 해당 location이 목록에서 제거됨', () async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       // MockApiService starts with 1 location: LocationModel(province: '로렘시', district: '입숨구')
       final existingLabel = vm.currentUser!.locations.first.displayLabel;
@@ -407,7 +409,7 @@ void main() {
     });
 
     test('removeTag(time) 후 해당 TimeSlot이 목록에서 제거됨', () async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       // MockApiService starts with 3 time slots
       final existingLabel = vm.currentUser!.availableTimes.first.displayLabel;
@@ -419,7 +421,7 @@ void main() {
     });
 
     test('removeTag(interest) 후 해당 interest가 목록에서 제거됨', () async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       final existingInterest = vm.currentUser!.interests.first;
       vm.removeTag(existingInterest, TagType.interest);
@@ -427,14 +429,14 @@ void main() {
     });
 
     test('removeTag(ageRange) 후 ageRange가 null이 됨', () async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       vm.removeTag('20대', TagType.ageRange);
       expect(vm.currentUser!.ageRange, isNull);
     });
 
     test('removeTag(gender) 후 gender가 null이 됨', () async {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       vm.removeTag('남성', TagType.gender);
       expect(vm.currentUser!.gender, isNull);
@@ -449,7 +451,7 @@ void main() {
   test('addTag rejects whitespace-only interest strings (manual)', () async {
     final whitespaceStrings = [' ', '  ', '\t', '\n', '   \t\n  '];
     for (final ws in whitespaceStrings) {
-      final vm = HomeViewModel(MockApiService());
+      final vm = HomeViewModel(AuthService(), InviteService());
       await vm.init();
       final interestsBefore = List<String>.from(vm.currentUser!.interests);
       await vm.addTag(ws, TagType.interest);
@@ -465,7 +467,7 @@ void main() {
   // **Validates: Requirements 3.6, 8.4**
   // ─────────────────────────────────────────────
   test('locations never exceed 3', () async {
-    final vm = HomeViewModel(MockApiService());
+    final vm = HomeViewModel(AuthService(), InviteService());
     await vm.init();
     // MockApiService starts with 1 location. Add 4 different ones — total capped at 3.
     final locations = [

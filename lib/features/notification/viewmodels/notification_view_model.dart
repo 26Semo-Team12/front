@@ -1,25 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/notification.dart';
+import '../services/notification_service.dart';
 
 class NotificationViewModel extends ChangeNotifier {
   List<NotificationItem> _notifications = [];
   bool _isLoading = false;
+  final NotificationService _notificationService = NotificationService();
+  IO.Socket? _socket;
 
   List<NotificationItem> get notifications => _notifications;
   bool get isLoading => _isLoading;
   bool get hasUnread => _notifications.any((n) => !n.isRead);
 
   NotificationViewModel() {
-    _loadMockData();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final list = await _notificationService.getMyNotifications();
+      _notifications = list;
+    } catch (e) {
+      debugPrint('Failed to load notifications: $e');
+      _loadMockData();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void initSocket(int userId) {
+    _socket = IO.io('http://43.201.46.164:3000/notifications', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+
+    _socket!.onConnect((_) {
+      debugPrint('Connected to notification socket');
+      _socket!.emit('authenticate', {'userId': userId});
+    });
+
+    _socket!.on('notification', (data) {
+      final newNotif = NotificationItem.fromJson(data);
+      _notifications.insert(0, newNotif);
+      notifyListeners();
+    });
+
+    _socket!.connect();
   }
 
   void _loadMockData() {
-    _isLoading = true;
-    notifyListeners();
-
     _notifications = [
       NotificationItem(
-        id: '1',
+        id: 1,
         userId: 1,
         type: NotificationType.invite,
         title: '새로운 모임 초대',
@@ -28,7 +64,7 @@ class NotificationViewModel extends ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
       ),
       NotificationItem(
-        id: '2',
+        id: 2,
         userId: 1,
         type: NotificationType.chat,
         title: '새로운 메시지',
@@ -37,7 +73,7 @@ class NotificationViewModel extends ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
       ),
       NotificationItem(
-        id: '3',
+        id: 3,
         userId: 1,
         type: NotificationType.schedule,
         title: '일정 알림',
@@ -46,7 +82,7 @@ class NotificationViewModel extends ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
       NotificationItem(
-        id: '4',
+        id: 4,
         userId: 1,
         type: NotificationType.evaluation,
         title: '모임 평가 요청',
@@ -55,7 +91,7 @@ class NotificationViewModel extends ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
       ),
       NotificationItem(
-        id: '5',
+        id: 5,
         userId: 1,
         type: NotificationType.system,
         title: '시스템 점검 안내',
@@ -64,22 +100,35 @@ class NotificationViewModel extends ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
       ),
     ];
-
-    _isLoading = false;
-    notifyListeners();
   }
 
-  void markAsRead(String id) {
+  void markAsRead(int id) async {
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1 && !_notifications[index].isRead) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
       notifyListeners();
+      try {
+        await _notificationService.markAsRead(id);
+      } catch (e) {
+        debugPrint('Failed to mark notification as read: $e');
+      }
     }
   }
 
-  void removeNotification(String id) {
+  void removeNotification(int id) async {
     _notifications.removeWhere((n) => n.id == id);
     notifyListeners();
+    try {
+      await _notificationService.deleteNotification(id);
+    } catch (e) {
+      debugPrint('Failed to delete notification: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _socket?.dispose();
+    super.dispose();
   }
 
   void onNotificationTap(BuildContext context, NotificationItem item) {

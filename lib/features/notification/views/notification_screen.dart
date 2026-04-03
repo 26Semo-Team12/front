@@ -63,7 +63,7 @@ class NotificationScreen extends StatelessWidget {
                     final item = notifications[index];
                     final iconColor = _getIconColor(item.type);
                     return Dismissible(
-                      key: Key(item.id),
+                      key: Key(item.id.toString()),
                       direction: DismissDirection.horizontal,
                       onDismissed: (_) => viewModel.removeNotification(item.id),
                       background: Container(
