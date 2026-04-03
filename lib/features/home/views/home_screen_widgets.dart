@@ -523,9 +523,10 @@ class FilterButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFD6706D) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? null
-              : Border.all(color: Colors.grey.shade400, width: 1),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFD6706D) : Colors.grey.shade400,
+            width: 1,
+          ),
         ),
         child: Text(
           label,
@@ -653,7 +654,7 @@ class _AnimatedInvitationListState extends State<_AnimatedInvitationList> {
     return Column(
       children: _all.map((inv) {
         final visible = _visibleIds.contains(inv.id);
-        return _FadeSlideItem(
+        return FadeSlideItem(
           key: ValueKey(inv.id),
           visible: visible,
           child: InvitationCard(invitation: inv),
@@ -663,16 +664,16 @@ class _AnimatedInvitationListState extends State<_AnimatedInvitationList> {
   }
 }
 
-class _FadeSlideItem extends StatefulWidget {
+class FadeSlideItem extends StatefulWidget {
   final bool visible;
   final Widget child;
-  const _FadeSlideItem({super.key, required this.visible, required this.child});
+  const FadeSlideItem({super.key, required this.visible, required this.child});
 
   @override
-  State<_FadeSlideItem> createState() => _FadeSlideItemState();
+  State<FadeSlideItem> createState() => _FadeSlideItemState();
 }
 
-class _FadeSlideItemState extends State<_FadeSlideItem>
+class _FadeSlideItemState extends State<FadeSlideItem>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _opacity;
@@ -689,7 +690,7 @@ class _FadeSlideItemState extends State<_FadeSlideItem>
   }
 
   @override
-  void didUpdateWidget(_FadeSlideItem old) {
+  void didUpdateWidget(FadeSlideItem old) {
     super.didUpdateWidget(old);
     if (widget.visible != old.visible) {
       widget.visible ? _ctrl.forward() : _ctrl.reverse();
