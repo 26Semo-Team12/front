@@ -21,7 +21,7 @@ class MockApiService {
     reputationScore: 45,
     onboardingStep: 3,
     isProfileCompleted: true,
-    locations: [const LocationModel(province: '로렘시', district: '입숨구')],
+    locations: [const LocationModel(province: '경기도', district: '수원시')],
     availableTimes: const [
       TimeSlot(weekday: 0, hourIndex: 9),
       TimeSlot(weekday: 2, hourIndex: 14),

@@ -360,38 +360,7 @@ class _MyPageContent extends StatelessWidget {
   void _showInterestDialog(BuildContext context, ProfileViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('관심사 추가', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          content: Container(
-            width: double.maxFinite,
-            constraints: const BoxConstraints(maxHeight: 350),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: kInterestPresets.length,
-              itemBuilder: (_, index) {
-                final item = kInterestPresets[index];
-                return ListTile(
-                  title: Text(item),
-                  trailing: const Icon(Icons.add_circle_outline, color: Color(0xFFD6706D), size: 20),
-                  onTap: () {
-                    viewModel.addTag(item, TagType.interest);
-                    Navigator.pop(ctx);
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('닫기', style: TextStyle(color: Colors.black54)),
-            ),
-          ],
-        );
-      },
+      builder: (ctx) => _InterestPickerDialog(viewModel: viewModel),
     );
   }
 
@@ -409,7 +378,178 @@ class _MyPageContent extends StatelessWidget {
   }
 }
 
-// ─── 시간대 선택 바텀시트 위젯 ──────────────────────────────────────────────
+// ─── 관심사 선택 다이얼로그 ────────────────────────────────────────────────
+
+// 가나다 정렬된 관심사 목록
+final _sortedInterests = List<String>.from(kInterestPresets)..sort();
+
+// ── 파자 분해 기반 퍼지 매칭 (초성/중성/종성 분리) ──
+const _chosungList = [
+  'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ',
+  'ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
+];
+
+({int cho, int jung, int jong})? _decomposeHangul(String char) {
+  final code = char.codeUnitAt(0);
+  if (code < 0xAC00 || code > 0xD7A3) return null;
+  final offset = code - 0xAC00;
+  return (cho: offset ~/ 588, jung: (offset % 588) ~/ 28, jong: offset % 28);
+}
+
+bool _isJamo(String char) {
+  final code = char.codeUnitAt(0);
+  return code >= 0x3131 && code <= 0x314E;
+}
+
+int _jamoToChosungIndex(String jamo) => _chosungList.indexOf(jamo);
+
+bool _charMatches(String qChar, String wChar, {required bool isLast}) {
+  if (_isJamo(qChar)) {
+    final qIdx = _jamoToChosungIndex(qChar);
+    if (qIdx < 0) return qChar == wChar;
+    final wd = _decomposeHangul(wChar);
+    if (wd == null) return false;
+    return wd.cho == qIdx;
+  }
+  final qd = _decomposeHangul(qChar);
+  if (qd == null) return qChar.toLowerCase() == wChar.toLowerCase();
+  final wd = _decomposeHangul(wChar);
+  if (wd == null) return false;
+  if (qd.cho != wd.cho || qd.jung != wd.jung) return false;
+  if (isLast) return qd.jong == 0 || qd.jong == wd.jong;
+  return qd.jong == wd.jong;
+}
+
+bool _interestMatchesQuery(String word, String query) {
+  if (query.isEmpty) return true;
+  final qChars = query.characters.toList();
+  final wChars = word.characters.toList();
+  if (qChars.length > wChars.length) return false;
+  for (var start = 0; start <= wChars.length - qChars.length; start++) {
+    bool ok = true;
+    for (var i = 0; i < qChars.length; i++) {
+      if (!_charMatches(qChars[i], wChars[start + i], isLast: i == qChars.length - 1)) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return true;
+  }
+  return false;
+}
+
+class _InterestPickerDialog extends StatefulWidget {
+  final ProfileViewModel viewModel;
+  const _InterestPickerDialog({required this.viewModel});
+
+  @override
+  State<_InterestPickerDialog> createState() => _InterestPickerDialogState();
+}
+
+class _InterestPickerDialogState extends State<_InterestPickerDialog> {
+  final _searchController = TextEditingController();
+  List<String> _filtered = _sortedInterests;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearch);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearch);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearch() {
+    final q = _searchController.text.trim();
+    setState(() {
+      _filtered = q.isEmpty
+          ? _sortedInterests
+          : _sortedInterests.where((s) => _interestMatchesQuery(s, q)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      title: const Text('관심사 추가', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 검색창
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: '관심사 검색...',
+                prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                        onPressed: () => _searchController.clear(),
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // 목록
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: _filtered.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text('검색 결과가 없습니다.', style: TextStyle(color: Colors.grey)),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) {
+                        final item = _filtered[i];
+                        final alreadyAdded = widget.viewModel.currentUser?.interests.contains(item) ?? false;
+                        return ListTile(
+                          dense: true,
+                          title: Text(item, style: const TextStyle(fontSize: 15)),
+                          trailing: alreadyAdded
+                              ? const Icon(Icons.check_circle, color: Color(0xFFD6706D), size: 20)
+                              : const Icon(Icons.add_circle_outline, color: Color(0xFFD6706D), size: 20),
+                          onTap: alreadyAdded
+                              ? null
+                              : () {
+                                  widget.viewModel.addTag(item, TagType.interest);
+                                  Navigator.pop(context);
+                                },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기', style: TextStyle(color: Colors.black54)),
+        ),
+      ],
+    );
+  }
+}
 
 class _TimeSlotPickerSheet extends StatefulWidget {
   final List<TimeSlot> initialSlots;

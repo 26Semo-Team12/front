@@ -118,21 +118,25 @@ class _HomeScrollView extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         // 앱 이름+설정 — floating: 스크롤 내리면 사라지고, 올리면 바로 나타남
-        const SliverAppBar(
+        SliverAppBar(
           floating: true,
           snap: true,
           pinned: false,
           elevation: 0,
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
           leading: Padding(
-            padding: EdgeInsets.only(left: 16),
-            child: Icon(Icons.pets, color: Colors.black),
+            padding: const EdgeInsets.only(left: 16),
+            child: Icon(Icons.pets, color: Theme.of(context).colorScheme.onSurface),
           ),
           title: Text(
             '앱 이름',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
-          actions: [_AppBarActions()],
+          actions: const [_AppBarActions()],
         ),
         // 프로필 카드 — 일반 sliver: 끝까지 스크롤해야 나타남
         SliverToBoxAdapter(
@@ -161,6 +165,7 @@ class _AppBarActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -168,7 +173,7 @@ class _AppBarActions extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_none, color: Colors.black),
+              icon: Icon(Icons.notifications_none, color: iconColor),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -192,7 +197,7 @@ class _AppBarActions extends StatelessWidget {
           ],
         ),
         IconButton(
-          icon: const Icon(Icons.settings, color: Colors.black),
+          icon: Icon(Icons.settings, color: iconColor),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -218,7 +223,7 @@ class _FilterRowDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).scaffoldBackgroundColor,
       alignment: Alignment.centerLeft,
       child: const InvitationFilterRow(),
     );

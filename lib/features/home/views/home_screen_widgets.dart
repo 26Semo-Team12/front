@@ -880,35 +880,8 @@ class InvitationCard extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              bottom: 12,
-              right: 12,
-              child: Row(
-                children: [
-                  _buildOverlapAvatar(),
-                  _buildOverlapAvatar(),
-                  _buildOverlapAvatar(),
-                ],
-              ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildOverlapAvatar() {
-    return Align(
-      widthFactor: 0.6,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.grey.shade400,
-          border: Border.all(color: Colors.white, width: 1.5),
-        ),
-        child: const Icon(Icons.person, size: 16, color: Colors.white),
       ),
     );
   }
