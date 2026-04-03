@@ -1,0 +1,153 @@
+00:00 +0: loading C:/Users/henry/Desktop/front/test/core/models/tag_colors_test.dart
+00:00 +0: C:/Users/henry/Desktop/front/test/core/models/tag_colors_test.dart: 모든 TagType 값에 대해 kTagColors에 색상이 정의되어 있음
+00:00 +1: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: Property 5: 이름 업데이트 반영 임의의 유효한 이름으로 copyWith 후 name이 해당 값과 일치함 (100회 반복)
+00:00 +2: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: Property 5: 이름 업데이트 반영 copyWith(name:) 호출 시 원본 인스턴스의 name은 변경되지 않음
+00:00 +3: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: copyWith — 다른 필드 업데이트 검증 copyWith(interests:) 후 interests가 올바르게 업데이트됨
+00:00 +4: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: copyWith — 다른 필드 업데이트 검증 copyWith(ageRange:) 후 ageRange가 올바르게 업데이트됨
+00:00 +5: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: copyWith — 다른 필드 업데이트 검증 copyWith(gender:) 후 gender가 올바르게 업데이트됨
+00:00 +6: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: copyWith — 다른 필드 업데이트 검증 copyWith(profileImageUrl:) 후 profileImageUrl이 올바르게 업데이트됨
+00:00 +7: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: copyWith — 다른 필드 업데이트 검증 인자 없이 copyWith 호출 시 모든 필드가 원본과 동일함
+00:00 +8: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: copyWith — 다른 필드 업데이트 검증 rating은 copyWith로 변경되지 않음 (항상 원본 유지)
+00:00 +9: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: TimeSlot serialization round trip (testing 100 inputs)
+00:00 +10: C:/Users/henry/Desktop/front/test/core/models/user_profile_test.dart: LocationModel serialization round trip (testing 100 inputs)
+00:00 +11: C:/Users/henry/Desktop/front/test/core/services/mock_api_service_test.dart: Property 11: MockAPI 프로필 수정 라운드 트립 임의의 유효한 수정 데이터로 patchMe 후 getMe 결과가 수정된 데이터와 일치함 (100회 반복)
+00:00 +12: C:/Users/henry/Desktop/front/test/core/services/mock_api_service_test.dart: Property 11: MockAPI 프로필 수정 라운드 트립 patchMe에서 일부 필드만 수정 시 나머지 필드는 유지됨 (100회 반복)
+00:00 +13: C:/Users/henry/Desktop/front/test/core/services/mock_api_service_test.dart: MockApiService 단위 테스트 getMe는 기본 UserProfile을 반환함
+00:00 +14: C:/Users/henry/Desktop/front/test/core/services/mock_api_service_test.dart: MockApiService 단위 테스트 patchMe는 수정된 UserProfile을 반환함
+00:00 +15: C:/Users/henry/Desktop/front/test/core/services/mock_api_service_test.dart: MockApiService 단위 테스트 patchMe 후 getMe는 동일한 수정된 프로필을 반환함
+00:00 +16: C:/Users/henry/Desktop/front/test/core/services/mock_api_service_test.dart: MockApiService 단위 테스트 각 MockApiService 인스턴스는 독립적인 상태를 가짐
+00:00 +17: C:/Users/henry/Desktop/front/test/features/home/models/invitation_test.dart: Property 8: 초대장 목록 정렬 순서 불변 임의의 Invitation 목록을 type.index 오름차순으로 정렬하면 순서가 유지됨 (100회 반복)
+00:00 +18: C:/Users/henry/Desktop/front/test/features/home/models/invitation_test.dart: Property 8: 초대장 목록 정렬 순서 불변 정렬 결과는 newInvitation → longTerm → expired 순서를 따름 (100회 반복)
+00:00 +19: C:/Users/henry/Desktop/front/test/features/home/models/invitation_test.dart: Property 8: 초대장 목록 정렬 순서 불변 빈 목록 정렬은 빈 목록을 반환함
+00:00 +20: C:/Users/henry/Desktop/front/test/features/home/models/invitation_test.dart: Property 8: 초대장 목록 정렬 순서 불변 단일 항목 목록 정렬은 동일한 항목을 반환함
+00:00 +21: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 1: 태그 삭제 후 목록에서 제거됨 임의의 interest 태그 목록에서 임의의 태그 삭제 후 해당 값 부재 (100회 반복)
+00:00 +22: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 1: 태그 삭제 후 목록에서 제거됨 ageRange 태그 삭제 후 null로 변경됨 (100회 반복)
+00:00 +23: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 1: 태그 삭제 후 목록에서 제거됨 gender 태그 삭제 후 null로 변경됨 (100회 반복)
+00:00 +23 -1: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 1: 태그 삭제 후 목록에서 제거됨 gender 태그 삭제 후 null로 변경됨 (100회 반복) [E]
+  type 'String' is not a subtype of type 'GenderType?' in type cast
+  package:front/core/models/user_profile.dart 154:64              UserProfile.copyWith
+  package:front/core/services/mock_api_service.dart 50:33         MockApiService.patchMe
+  test\features\home\viewmodels\home_view_model_test.dart 115:23  main.<fn>.<fn>
+  
+00:00 +23 -1: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 2: 태그 추가 후 목록에 포함됨 임의의 유효 interest 태그 추가 후 interests에 포함됨 (100회 반복)
+00:00 +24 -1: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 2: 태그 추가 후 목록에 포함됨 임의의 유효 ageRange 태그 추가 후 ageRange에 반영됨 (100회 반복)
+00:00 +25 -1: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 2: 태그 추가 후 목록에 포함됨 임의의 유효 gender 태그 추가 후 gender에 반영됨 (100회 반복)
+00:00 +25 -2: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 2: 태그 추가 후 목록에 포함됨 임의의 유효 gender 태그 추가 후 gender에 반영됨 (100회 반복) [E]
+  Expected: '라'
+    Actual: GenderType:<GenderType.other>
+     Which: not an <Instance of 'String'>
+  iteration=0: addTag("라", gender) 후 gender가 일치해야 함
+  
+  package:matcher                                                expect
+  test\features\home\viewmodels\home_view_model_test.dart 184:9  main.<fn>.<fn>
+  
+00:00 +25 -2: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 3: 빈 값 입력은 거부됨 공백 문자열로 addTag 시도 시 거부되고 상태 불변 (100회 반복)
+00:00 +26 -2: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 3: 빈 값 입력은 거부됨 공백 문자열로 updateProfile(name) 시도 시 거부되고 이름 불변 (100회 반복)
+00:00 +27 -2: C:/Users/henry/Desktop/front/test/features/home/viewmodels/home_view_model_test.dart: Property 6: 필터 적용 시 해당 타입만 반환됨 임의의 Invitation 목록에 필터 적용 시 결과가 해당 타입만 포함 (100회 반복)
+00:00 +28 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +29 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +30 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +31 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +32 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +33 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +34 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +35 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +36 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +37 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +38 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +39 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:00 +40 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:01 +41 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:01 +42 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:01 +43 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:01 +44 -2: C:/Users/henry/Desktop/front/test/features/home/views/filter_button_test.dart: FilterButton: 선택/비선택 상태 선택 상태일 때 배경색이 Color(0xFFD6706D)이고 텍스트가 흰색
+00:01 +45 -2: C:/Users/henry/Desktop/front/test/features/home/views/home_screen_widgets_test.dart: UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출 X 버튼(Icons.close) 탭 시 onDelete 콜백이 호출됨
+00:01 +46 -2: C:/Users/henry/Desktop/front/test/features/home/views/home_screen_widgets_test.dart: UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출 X 버튼(Icons.close) 탭 시 onDelete 콜백이 호출됨
+00:01 +47 -2: C:/Users/henry/Desktop/front/test/features/home/views/home_screen_widgets_test.dart: UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출 X 버튼(Icons.close) 탭 시 onDelete 콜백이 호출됨
+00:01 +48 -2: C:/Users/henry/Desktop/front/test/features/home/views/home_screen_widgets_test.dart: UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출 X 버튼(Icons.close) 탭 시 onDelete 콜백이 호출됨
+00:01 +49 -2: C:/Users/henry/Desktop/front/test/features/home/views/home_screen_widgets_test.dart: UserProfileTag: X 버튼 탭 시 onDelete 콜백 호출 X 버튼(Icons.close) 탭 시 onDelete 콜백이 호출됨
+00:01 +50 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+00:01 +51 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+00:01 +52 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+00:01 +52 ~1 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+00:01 +52 ~2 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+00:01 +52 ~3 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+00:01 +53 ~3 -2: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+pumpAndSettle timed out
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.pumpAndSettle.<anonymous closure> (package:flutter_test/src/widget_tester.dart:717:11)
+<asynchronous suspension>
+#1      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#2      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart:160:9)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +53 ~3 -3: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복) [E]
+  Test failed. See exception logs above.
+  The test description was: 임의의 Invitation 렌더링 시 title, location, memberCount 포함 검증 (10회 반복)
+  
+00:02 +53 ~3 -3: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 imageUrl이 null일 때 플레이스홀더 아이콘이 표시됨
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _IconWidgetFinder:<Found 0 widgets with icon "IconData(U+0E332)": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart:208:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart line 208
+The test description was:
+  imageUrl이 null일 때 플레이스홀더 아이콘이 표시됨
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +53 ~3 -4: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 imageUrl이 null일 때 플레이스홀더 아이콘이 표시됨 [E]
+  Test failed. See exception logs above.
+  The test description was: imageUrl이 null일 때 플레이스홀더 아이콘이 표시됨
+  
+00:02 +53 ~3 -4: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 포맷된 dateTime이 카드에 표시됨
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+pumpAndSettle timed out
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.pumpAndSettle.<anonymous closure> (package:flutter_test/src/widget_tester.dart:717:11)
+<asynchronous suspension>
+#1      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#2      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart:232:7)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  포맷된 dateTime이 카드에 표시됨
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +53 ~3 -5: C:/Users/henry/Desktop/front/test/features/home/views/invitation_card_test.dart: Property 9: 초대장 카드 필수 정보 표시 포맷된 dateTime이 카드에 표시됨 [E]
+  Test failed. See exception logs above.
+  The test description was: 포맷된 dateTime이 카드에 표시됨
+  
+00:02 +53 ~3 -5: Some tests failed.
