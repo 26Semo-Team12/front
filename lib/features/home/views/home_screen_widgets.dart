@@ -219,17 +219,6 @@ class UserProfileCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, size: 14, color: Colors.white70),
-                          const SizedBox(width: 4),
-                          Text(
-                            '신뢰도 ${user.reputationScore}점',
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -248,7 +237,7 @@ class UserProfileCard extends StatelessWidget {
                 if (user.gender != null)
                   _ReadOnlyTag(text: user.gender!.displayName, color: kTagColors[TagType.gender]!),
                 if (user.ageRange?.isNotEmpty ?? false)
-                  _ReadOnlyTag(text: user.ageRange!, color: kTagColors[TagType.ageRange]!),
+                  _ReadOnlyTag(text: user.ageRangeLabel, color: kTagColors[TagType.ageRange]!),
                 ...user.interests.map((i) => _ReadOnlyTag(text: i, color: kTagColors[TagType.interest]!)),
               ],
             ),

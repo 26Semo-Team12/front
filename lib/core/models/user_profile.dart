@@ -126,6 +126,19 @@ class UserProfile {
     };
   }
 
+  /// 출생연도로 나이대 문자열 계산 (예: 20대 초반 / 20대 후반)
+  /// 출생연도로 나이대 문자열 계산 (예: 20대 초반 / 20대 후반)
+  String get ageRangeLabel {
+    if (birthYear == null) return ageRange ?? '';
+    final age = DateTime.now().year - birthYear!;
+    if (age < 10) return '10대 미만';
+    if (age >= 100) return '100세 이상';
+    final decade = (age ~/ 10) * 10;
+    final half = (age % 10) < 5 ? '초반' : '후반';
+    if (decade >= 60) return '60대 이상';
+    return '$decade대 $half';
+  }
+
   static const _unset = Object();
   static const unset = _unset; // public alias for MockApiService
 

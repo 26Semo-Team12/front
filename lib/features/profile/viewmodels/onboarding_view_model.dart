@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/enums.dart';
+import '../../../core/models/user_profile.dart';
 import '../../../core/services/mock_api_service.dart';
 
 class OnboardingViewModel extends ChangeNotifier {
@@ -12,12 +13,14 @@ class OnboardingViewModel extends ChangeNotifier {
   String _name = '';
   int? _birthYear;
   GenderType? _gender;
-  String _region = '';
+  LocationModel? _location;
 
   String get name => _name;
   int? get birthYear => _birthYear;
   GenderType? get gender => _gender;
-  String get region => _region;
+  LocationModel? get location => _location;
+  // 하위 호환용
+  String get region => _location?.displayLabel ?? '';
 
   String? _step1Error;
   String? get step1Error => _step1Error;
@@ -50,8 +53,8 @@ class OnboardingViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setRegion(String value) {
-    _region = value;
+  void setRegion(LocationModel loc) {
+    _location = loc;
     _step1Error = null;
     notifyListeners();
   }
@@ -82,8 +85,8 @@ class OnboardingViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    if (_region.trim().isEmpty) {
-      _step1Error = '주 활동 지역을 입력해 주세요.';
+    if (_location == null) {
+      _step1Error = '주 활동 지역을 선택해 주세요.';
       notifyListeners();
       return false;
     }
@@ -128,8 +131,10 @@ class OnboardingViewModel extends ChangeNotifier {
     try {
       await _mockApiService.patchMe(
         name: _name.trim(),
+        birthYear: _birthYear as Object?,
         interests: _selectedInterests.toList(),
         gender: _gender,
+        locations: _location != null ? [_location!] : [],
       );
       // isProfileCompleted는 백엔드나 MockApiService에서 관리해야 하지만, 지금은 호출만 함.
       onSuccess();
