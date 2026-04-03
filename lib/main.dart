@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/splash/views/splash_screen.dart';
 import 'features/notification/viewmodels/notification_view_model.dart';
+import 'features/home/viewmodels/home_view_model.dart';
+import 'features/auth/services/auth_service.dart';
+import 'features/gathering/services/invite_service.dart';
 import 'core/viewmodels/theme_view_model.dart';
 
 void main() {
@@ -17,6 +20,9 @@ class VentureApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(create: (_) => ThemeViewModel()),
+        ChangeNotifierProvider(
+          create: (_) => HomeViewModel(AuthService(), InviteService())..init(),
+        ),
       ],
       child: Consumer<ThemeViewModel>(
         builder: (_, themeVm, __) => MaterialApp(

@@ -141,12 +141,12 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile({String? name, String? profileImageUrl}) async {
+  Future<void> updateProfile({String? name, String? profileImageBase64}) async {
     if (name != null && name.trim().isEmpty) return;
     try {
       _currentUser = await _authService.updateMe(
         name: (name != null && name.trim().isNotEmpty) ? name : null,
-        profileImageUrl: profileImageUrl,
+        profileImageBase64: profileImageBase64,
       );
       notifyListeners();
     } catch (e) {

@@ -104,10 +104,10 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfileImage(String imageUrl) async {
+  Future<void> updateProfileImage(String base64Image) async {
     if (_currentUser == null) return;
     try {
-      _currentUser = await _authService.updateMe(profileImageUrl: imageUrl);
+      _currentUser = await _authService.updateMe(profileImageBase64: base64Image);
       notifyListeners();
     } catch (e) {
       debugPrint('Profile image update failed: $e');

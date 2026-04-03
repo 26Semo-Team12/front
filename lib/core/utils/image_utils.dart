@@ -1,9 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
+const String _serverBase = 'http://43.201.46.164:3000';
+
 /// URL이 로컬 파일 경로인지 확인
 bool isLocalPath(String url) {
   return !url.startsWith('http://') && !url.startsWith('https://');
+}
+
+/// 서버 상대 경로(/uploads/...)를 절대 URL로 변환
+String resolveImageUrl(String url) {
+  if (url.startsWith('/')) {
+    return '$_serverBase$url';
+  }
+  return url;
 }
 
 /// 로컬/네트워크 경로를 자동으로 구분해 ImageProvider를 반환
@@ -11,7 +21,7 @@ ImageProvider resolveImage(String url) {
   if (isLocalPath(url)) {
     return FileImage(File(url));
   }
-  return NetworkImage(url);
+  return NetworkImage(resolveImageUrl(url));
 }
 
 /// 이미지 로드 실패 시 기본 아이콘을 보여주는 CircleAvatar
@@ -51,7 +61,7 @@ class SafeCircleAvatar extends StatelessWidget {
                 errorBuilder: (_, __, ___) => _fallback(bg, cs, radius),
               )
             : Image.network(
-                imageUrl,
+                resolveImageUrl(imageUrl),
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => _fallback(bg, cs, radius),
               ),

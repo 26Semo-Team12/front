@@ -3,8 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/home_view_model.dart';
-import '../../auth/services/auth_service.dart';
-import '../../gathering/services/invite_service.dart';
 import '../../../core/models/user_profile.dart';
 import '../models/invitation.dart';
 import 'home_screen_widgets.dart';
@@ -18,10 +16,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => HomeViewModel(AuthService(), InviteService())..init(),
-      child: const _HomeScreenContent(),
-    );
+    return const _HomeScreenContent();
   }
 }
 
