@@ -3,104 +3,116 @@
 import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
 
-/// 로그인/회원가입 화면의 비즈니스 로직 ViewModel
-/// - 이메일 입력 상태 관리
-/// - 유효성 검사
-/// - Mock 로그인 처리
+enum AuthStep { email, password, signup }
+
 class AuthViewModel extends ChangeNotifier {
   final AuthService _authService = AuthService();
 
-  String _email = '';
-  String? _emailError;
-  bool _isLoading = false;
+  AuthStep _step = AuthStep.email;
+  AuthStep get step => _step;
 
-  bool _isEmailSubmitted = false;
-  bool _isExistingUser = false;
+  String _email = '';
   String _password = '';
   String _confirmPassword = '';
+
+  String? _emailError;
   String? _passwordError;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
   String get email => _email;
   String? get emailError => _emailError;
-  bool get isLoading => _isLoading;
-
-  bool get isEmailSubmitted => _isEmailSubmitted;
-  bool get isExistingUser => _isExistingUser;
-  String get password => _password;
-  String get confirmPassword => _confirmPassword;
   String? get passwordError => _passwordError;
+  bool get isLoading => _isLoading;
+  bool get obscurePassword => _obscurePassword;
+  bool get obscureConfirm => _obscureConfirm;
 
-  void updateEmail(String value) {
-    _email = value;
-    if (_emailError != null) {
-      _emailError = null;
-      notifyListeners();
-    }
+  // 하위 호환 및 상태
+  bool get isEmailSubmitted => _step != AuthStep.email;
+  bool _exists = false;
+  bool get isExistingUser => _exists;
+
+  void updateEmail(String v) {
+    _email = v;
+    if (_emailError != null) { _emailError = null; notifyListeners(); }
   }
 
-  void updatePassword(String value) {
-    _password = value;
-    if (_passwordError != null) {
-      _passwordError = null;
-      notifyListeners();
-    }
+  void updatePassword(String v) {
+    _password = v;
+    if (_passwordError != null) { _passwordError = null; notifyListeners(); }
   }
 
-  void updateConfirmPassword(String value) {
-    _confirmPassword = value;
-    if (_passwordError != null) {
-      _passwordError = null;
-      notifyListeners();
-    }
+  void updateConfirmPassword(String v) {
+    _confirmPassword = v;
+    if (_passwordError != null) { _passwordError = null; notifyListeners(); }
   }
 
-  /// 이메일 유효성 검사
+  void toggleObscurePassword() {
+    _obscurePassword = !_obscurePassword;
+    notifyListeners();
+  }
+
+  void toggleObscureConfirm() {
+    _obscureConfirm = !_obscureConfirm;
+    notifyListeners();
+  }
+
   bool _validateEmail() {
     if (_email.trim().isEmpty) {
       _emailError = '이메일을 입력해 주세요.';
       notifyListeners();
       return false;
     }
-
-    // 이메일 형식 확인
-    final emailRegex = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,}$');
-    if (!emailRegex.hasMatch(_email.trim())) {
+    final re = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,}$');
+    if (!re.hasMatch(_email.trim())) {
       _emailError = '올바른 이메일 형식을 입력해 주세요.';
       notifyListeners();
       return false;
     }
-
     _emailError = null;
     notifyListeners();
     return true;
   }
 
-  Future<void> onContinuePressed(void Function(bool isSignup) onSuccess) async {
-    if (!_isEmailSubmitted) {
-      if (!_validateEmail()) return;
-      _isLoading = true;
-      notifyListeners();
+  /// 이메일 확인 → check-email API 호출
+  Future<void> onContinuePressed() async {
+    if (!_validateEmail()) return;
+    _isLoading = true;
+    _emailError = null;
+    notifyListeners();
+
+    try {
+      final data = await _authService.checkEmail(_email.trim());
       
-      // Mock User Check (test@test.com == 기존유저)
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      _isEmailSubmitted = true;
-      _isExistingUser = (_email.trim() == 'test@test.com');
-      
+      _exists = data['exists'] ?? false;
+      final nextStep = data['nextStep'];
+
+      if (nextStep == 'LOGIN') {
+        _step = AuthStep.password;
+      } else if (nextStep == 'SIGNUP') {
+        _step = AuthStep.signup;
+      } else {
+        // 기본값 처리
+        _step = _exists ? AuthStep.password : AuthStep.signup;
+      }
+    } catch (e) {
+      _emailError = e.toString().replaceAll('Exception: ', '');
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return;
     }
+  }
 
+  Future<void> submitPassword(void Function(bool isSignup, {String? email, String? password}) onSuccess) async {
     if (_password.trim().isEmpty) {
       _passwordError = '비밀번호를 입력해 주세요.';
       notifyListeners();
       return;
     }
-    
-    if (!_isExistingUser) {
-      if (_password.trim().length < 6) {
-        _passwordError = '비밀번호는 6자리 이상이어야 합니다.';
+    if (_step == AuthStep.signup) {
+      if (_password.trim().length < 8) {
+        _passwordError = '비밀번호는 8자리 이상이어야 합니다.';
         notifyListeners();
         return;
       }
@@ -112,42 +124,32 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     _isLoading = true;
+    _passwordError = null;
     notifyListeners();
 
     try {
-      await _authService.signInWithEmail(_email.trim());
-      onSuccess(!_isExistingUser);
+      if (_step == AuthStep.password) {
+        // 로그인 루틴
+        await _authService.login(_email.trim(), _password.trim());
+        onSuccess(false);
+      } else {
+        // 회원가입 전초 단계: Onboarding으로 이동
+        // 여기서 실제 가입을 하는게 아니라 정보를 들고 온보딩으로 넘김
+        onSuccess(true, email: _email.trim(), password: _password.trim());
+      }
     } catch (e) {
-      _passwordError = '로그인에 실패했습니다: $e';
+      _passwordError = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// Google 로그인 (Mock)
-  Future<void> onGoogleSignIn(void Function(bool isSignup) onSuccess) async {
-    _isLoading = true;
+  void goBackToEmail() {
+    _step = AuthStep.email;
+    _password = '';
+    _confirmPassword = '';
+    _passwordError = null;
     notifyListeners();
-
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    _isLoading = false;
-    notifyListeners();
-
-    onSuccess(false);
-  }
-
-  /// Apple 로그인 (Mock)
-  Future<void> onAppleSignIn(void Function(bool isSignup) onSuccess) async {
-    _isLoading = true;
-    notifyListeners();
-
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    _isLoading = false;
-    notifyListeners();
-
-    onSuccess(false);
   }
 }

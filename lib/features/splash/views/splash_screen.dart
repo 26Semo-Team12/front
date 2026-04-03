@@ -76,18 +76,10 @@ class _SplashScreenContentState extends State<_SplashScreenContent>
           child: Column(
             children: [
               // 상단 여백 + 로고 영역 (화면 중앙 약간 위)
-              const Spacer(flex: 4),
-              // 앱 로고 이미지 (app_logo_1.png)
-              Image.asset(
-                'assets/images/app_logo_1.png',
-                width: 180,
-                height: 140,
-                fit: BoxFit.contain,
-              ),
-              const Spacer(flex: 5),
+              const Spacer(flex: 3),
               // 하단 텍스트 영역
               const Text(
-                'Verture',
+                'Venture',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -97,14 +89,22 @@ class _SplashScreenContentState extends State<_SplashScreenContent>
               ),
               const SizedBox(height: 8),
               const Text(
-                'Intersst, New person, New space',
+                'Interest, New person, New space',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black54,
                   letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 32),
+              // 앱 로고 이미지
+              Image.asset(
+                'assets/images/app_logo_1.png',
+                width: 180,
+                height: 140,
+                fit: BoxFit.contain,
+              ),
+              const Spacer(flex: 5),
             ],
           ),
         ),

@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:front/core/services/mock_api_service.dart';
 import 'package:front/features/home/viewmodels/home_view_model.dart';
 import 'package:front/features/home/views/home_screen_widgets.dart';
+import 'package:front/features/auth/services/auth_service.dart';
+import 'package:front/features/gathering/services/invite_service.dart';
 
 // ─────────────────────────────────────────────
 // 헬퍼 함수
@@ -22,7 +24,7 @@ String _randomNonEmptyString(Random rng, {int maxLength = 20}) {
 
 /// MockApiService를 초기화하고 HomeViewModel을 생성 후 init() 호출
 Future<HomeViewModel> _createViewModel(MockApiService service) async {
-  final vm = HomeViewModel(service);
+  final vm = HomeViewModel(AuthService(), InviteService());
   await vm.init();
   return vm;
 }

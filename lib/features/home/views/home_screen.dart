@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/services/mock_api_service.dart';
 import '../viewmodels/home_view_model.dart';
 import '../../../core/models/user_profile.dart';
 import '../models/invitation.dart';
@@ -17,10 +16,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => HomeViewModel(MockApiService.instance)..init(),
-      child: const _HomeScreenContent(),
-    );
+    return const _HomeScreenContent();
   }
 }
 
@@ -46,12 +42,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     }
 
     return Scaffold(
-      body: Stack(
-        children: [
-          _HomeScrollView(),
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            _HomeScrollView(),
           if (_showAiMcButton)
             Positioned(
-              left: 8, right: 8, bottom: 20,
+              left: 8,
+              right: 8,
+              bottom: MediaQuery.of(context).padding.bottom + 16,
               child: GestureDetector(
                 onTap: () => Navigator.push(
                   context,
@@ -92,14 +92,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               ),
             ),
         ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.small(
         backgroundColor: _showAiMcButton
             ? const Color(0xFF7B68EE)
             : Colors.grey.shade400,
         tooltip: 'AI MC 버튼 토글 (디버그)',
-        onPressed: () => setState(() => _showAiMcButton = !_showAiMcButton),
-        child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 20),
+        onPressed: () {
+          setState(() => _showAiMcButton = !_showAiMcButton);
+          context.read<NotificationViewModel>().simulateNotification();
+        },
+        child: const Icon(Icons.flash_on, color: Colors.white, size: 20),
       ),
     );
   }
@@ -115,24 +119,26 @@ class _HomeScrollView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
+    return RefreshIndicator(
+      color: const Color(0xFFD6706D),
+      onRefresh: () => context.read<HomeViewModel>().refresh(),
+      child: CustomScrollView(
+        slivers: [
         // 앱 이름+설정 — floating: 스크롤 내리면 사라지고, 올리면 바로 나타남
-        const SliverAppBar(
+        SliverAppBar(
           floating: true,
           snap: true,
           pinned: false,
           elevation: 0,
-          backgroundColor: Colors.white,
-          leading: Padding(
-            padding: EdgeInsets.only(left: 16),
-            child: Icon(Icons.pets, color: Colors.black),
+          toolbarHeight: kToolbarHeight,
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          title: Image.asset(
+            'assets/images/logo_2.png',
+            height: 32,
+            fit: BoxFit.contain,
           ),
-          title: Text(
-            '앱 이름',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          actions: [_AppBarActions()],
+          centerTitle: false,
+          actions: const [_AppBarActions()],
         ),
         // 프로필 카드 — 일반 sliver: 끝까지 스크롤해야 나타남
         SliverToBoxAdapter(
@@ -150,7 +156,12 @@ class _HomeScrollView extends StatelessWidget {
         // 초대장 목록
         const _InvitationSliver(),
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        // 하단 시스템 바 공간 확보
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+        ),
       ],
+      ),
     );
   }
 }
@@ -161,6 +172,7 @@ class _AppBarActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -168,7 +180,7 @@ class _AppBarActions extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_none, color: Colors.black),
+              icon: Icon(Icons.notifications_none, color: iconColor),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -192,7 +204,7 @@ class _AppBarActions extends StatelessWidget {
           ],
         ),
         IconButton(
-          icon: const Icon(Icons.settings, color: Colors.black),
+          icon: Icon(Icons.settings, color: iconColor),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -208,17 +220,17 @@ class _AppBarActions extends StatelessWidget {
 class _FilterRowDelegate extends SliverPersistentHeaderDelegate {
   const _FilterRowDelegate();
 
-  static const double _height = 56.0;
+  static const double _rowHeight = 56.0;
 
   @override
-  double get minExtent => _height;
+  double get minExtent => _rowHeight;
   @override
-  double get maxExtent => _height;
+  double get maxExtent => _rowHeight;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).scaffoldBackgroundColor,
       alignment: Alignment.centerLeft,
       child: const InvitationFilterRow(),
     );
@@ -264,6 +276,13 @@ class _AnimatedInvitationSliverState extends State<_AnimatedInvitationSliver> {
   void didUpdateWidget(_AnimatedInvitationSliver old) {
     super.didUpdateWidget(old);
     final newIds = widget.invitations.map((e) => e.id).toSet();
+    // 기존 항목 업데이트 + 새 항목 추가
+    final updatedMap = {for (final inv in widget.invitations) inv.id: inv};
+    for (int i = 0; i < _all.length; i++) {
+      if (updatedMap.containsKey(_all[i].id)) {
+        _all[i] = updatedMap[_all[i].id]!;
+      }
+    }
     for (final inv in widget.invitations) {
       if (!_all.any((e) => e.id == inv.id)) _all.add(inv);
     }

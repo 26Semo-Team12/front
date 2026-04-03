@@ -1,12 +1,13 @@
 // lib/core/network/api_client.dart
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 앱 전반의 API 통신을 담당하는 기본 HTTP 클라이언트 래퍼
 class ApiClient {
-  static const String baseUrl = 'https://api.ventureapp.local/v1'; // 환경에 따라 변경
+  static const String baseUrl = 'http://43.201.46.164:3000/api/v1'; // 최신 주소로 변경
   
   final http.Client _client = http.Client();
 
@@ -17,6 +18,7 @@ class ApiClient {
     
     return {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -47,6 +49,16 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  Future<dynamic> patch(String endpoint, {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$baseUrl$endpoint');
+    final response = await _client.patch(
+      uri,
+      headers: await _getHeaders(),
+      body: body != null ? jsonEncode(body) : null,
+    );
+    return _handleResponse(response);
+  }
+
   Future<dynamic> delete(String endpoint) async {
     final uri = Uri.parse('$baseUrl$endpoint');
     final response = await _client.delete(uri, headers: await _getHeaders());
@@ -56,12 +68,23 @@ class ApiClient {
   dynamic _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isNotEmpty) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        // 디버그: API 응답 로깅
+        debugPrint('[API] ${response.request?.url} → ${response.body.length > 300 ? response.body.substring(0, 300) : response.body}');
+        return decoded;
       }
       return null;
     } else {
-      // 401 Unauthorized 처리 등은 여기서 전역적으로 할 수 있음
-      throw Exception('API Error: ${response.statusCode} - ${response.body}');
+      // 에러 메시지 추출 시도
+      try {
+        final body = jsonDecode(response.body);
+        final message = body['error']?['message'] ?? 'API 호출 실패';
+        throw Exception(message);
+      } catch (e) {
+        if (e is Exception) rethrow; // 이미 가공된 에러면 다시 던짐
+        throw Exception('API Error: ${response.statusCode} - ${response.body}');
+      }
     }
   }
 }
+

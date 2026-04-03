@@ -12,6 +12,7 @@ import '../../profile/views/settings_screen.dart';
 
 import '../../notification/views/notification_screen.dart';
 import '../../notification/viewmodels/notification_view_model.dart';
+import '../../../core/utils/image_utils.dart';
 
 // ─── 한글 음절 분해 기반 퍼지 매칭 ─────────────────────────────────────────
 // 한글 유니코드 구조: 음절 = 0xAC00 + (초성 * 21 + 중성) * 28 + 종성
@@ -202,11 +203,10 @@ class UserProfileCard extends StatelessWidget {
             // ── 프로필 헤더 ──
             Row(
               children: [
-                CircleAvatar(
+                SafeCircleAvatar(
                   radius: 30,
-                  backgroundImage: NetworkImage(user.profileImageUrl),
-                ),
-                const SizedBox(width: 15),
+                  imageUrl: user.profileImageUrl,
+                ),                const SizedBox(width: 15),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,15 +220,12 @@ class UserProfileCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, size: 14, color: Colors.white70),
-                          const SizedBox(width: 4),
-                          Text(
-                            '신뢰도 ${user.reputationScore}점',
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
-                          ),
-                        ],
+                      Text(
+                        '${user.displayBirthYear} · ${user.gender?.displayName ?? '성별미상'}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -243,12 +240,10 @@ class UserProfileCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 ...user.locations.map((loc) => _ReadOnlyTag(text: loc.displayLabel, color: kTagColors[TagType.location]!)),
-                if (user.availableTimes.isNotEmpty)
-                  _ReadOnlyTag(text: '모임 가능 시간', color: kTagColors[TagType.time]!),
                 if (user.gender != null)
                   _ReadOnlyTag(text: user.gender!.displayName, color: kTagColors[TagType.gender]!),
                 if (user.ageRange?.isNotEmpty ?? false)
-                  _ReadOnlyTag(text: user.ageRange!, color: kTagColors[TagType.ageRange]!),
+                  _ReadOnlyTag(text: user.ageRangeLabel, color: kTagColors[TagType.ageRange]!),
                 ...user.interests.map((i) => _ReadOnlyTag(text: i, color: kTagColors[TagType.interest]!)),
               ],
             ),
@@ -515,23 +510,30 @@ class FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFD6706D) : Colors.white,
+          color: isSelected
+              ? const Color(0xFFD6706D)
+              : (isDark ? const Color(0xFF2C2C2C) : Colors.white),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFFD6706D) : Colors.grey.shade400,
+            color: isSelected
+                ? const Color(0xFFD6706D)
+                : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade600,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.grey.shade300 : Colors.grey.shade600),
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -724,11 +726,13 @@ class _FadeSlideItemState extends State<FadeSlideItem>
 
 // ─── InvitationCard (이미지만, 탭 시 로딩 → 상세 팝업) ─────────────────────
 
-/// 날짜 포맷 함수 (YYYY년 M월 D일 HH:mm)
+/// 날짜 포맷 함수 (YYYY년 M월 D일 오전/오후 X시)
 String formatDateTime(DateTime dt) {
-  final hour = dt.hour.toString().padLeft(2, '0');
-  final minute = dt.minute.toString().padLeft(2, '0');
-  return '${dt.year}년 ${dt.month}월 ${dt.day}일 $hour:$minute';
+  // UTC → 한국 시간 (UTC+9)
+  final kst = dt.isUtc ? dt.add(const Duration(hours: 9)) : dt;
+  final ampm = kst.hour < 12 ? '오전' : '오후';
+  final hour12 = kst.hour == 0 ? 12 : (kst.hour > 12 ? kst.hour - 12 : kst.hour);
+  return '${kst.year}년 ${kst.month}월 ${kst.day}일 $ampm $hour12시';
 }
 
 class InvitationCard extends StatelessWidget {
@@ -752,7 +756,11 @@ class InvitationCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => _openDetail(context),
+      onTap: () {
+        // 읽음 처리
+        context.read<HomeViewModel>().markInvitationAsRead(invitation.id);
+        _openDetail(context);
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: cardChild,
@@ -777,10 +785,9 @@ class InvitationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD6706D), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD6706D).withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -792,18 +799,19 @@ class InvitationCard extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             _buildContentImage(),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(12),
+            if (!invitation.isRead)
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
-                child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
               ),
-            ),
           ],
         ),
       ),
@@ -880,58 +888,40 @@ class InvitationCard extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              bottom: 12,
-              right: 12,
-              child: Row(
-                children: [
-                  _buildOverlapAvatar(),
-                  _buildOverlapAvatar(),
-                  _buildOverlapAvatar(),
-                ],
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOverlapAvatar() {
-    return Align(
-      widthFactor: 0.6,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.grey.shade400,
-          border: Border.all(color: Colors.white, width: 1.5),
-        ),
-        child: const Icon(Icons.person, size: 16, color: Colors.white),
-      ),
-    );
-  }
-
-  void _openDetail(BuildContext context) {
-    Navigator.of(context).push(
+  void _openDetail(BuildContext context) async {
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => GatheringDetailScreen(invitation: invitation),
       ),
     );
+    if (result == true && context.mounted) {
+      context.read<HomeViewModel>().refresh();
+    }
   }
 
-  Widget _placeholder() => Container(
-        height: 160,
-        width: double.infinity,
-        color: Colors.grey.shade300,
-        child: const Center(
-          child: Text(
-            '예시 초대장 이미지',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
-          ),
+  Widget _placeholder() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      color: Colors.grey.shade300,
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: Text(
+          invitation.message.isNotEmpty ? invitation.message : invitation.title,
+          style: const TextStyle(color: Colors.black87, fontSize: 15, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+          maxLines: 4,
+          overflow: TextOverflow.ellipsis,
         ),
-      );
+      ),
+    );
+  }
 }
 
 

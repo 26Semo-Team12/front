@@ -8,7 +8,8 @@ class HistoryView extends StatelessWidget {
   const HistoryView({super.key});
 
   String _formatDateTime(DateTime dt) {
-    return '${dt.year}.${dt.month.toString().padLeft(2,'0')}.${dt.day.toString().padLeft(2,'0')}';
+    final kst = dt.isUtc ? dt.add(const Duration(hours: 9)) : dt;
+    return '${kst.year}.${kst.month.toString().padLeft(2,'0')}.${kst.day.toString().padLeft(2,'0')}';
   }
 
   @override
@@ -93,7 +94,7 @@ class HistoryView extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => EvaluationScreen(
-                    gatheringId: inv.id,
+                    gatheringId: int.tryParse(inv.id) ?? 0,
                     participants: mockParticipants,
                     currentUserId: 1,
                   ),

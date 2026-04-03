@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'features/splash/views/splash_screen.dart'; // 스플래시 → Auth → Home 진입 플로우
+import 'features/splash/views/splash_screen.dart';
 import 'features/notification/viewmodels/notification_view_model.dart';
+import 'features/notification/views/notification_popup_overlay.dart';
+import 'features/home/viewmodels/home_view_model.dart';
+import 'features/auth/services/auth_service.dart';
+import 'features/gathering/services/invite_service.dart';
+import 'core/viewmodels/theme_view_model.dart';
 
 void main() {
   runApp(const VentureApp());
@@ -15,24 +20,44 @@ class VentureApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
-      ],
-      child: MaterialApp(
-        title: 'Venture', // 서비스명
-        debugShowCheckedModeBanner: false, // 화면 우측 상단 'DEBUG' 띠 제거
-        theme: ThemeData(
-          // Figma 디자인의 메인 컬러(#D6706D)를 테마의 시드 컬러로 지정
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD6706D)),
-          useMaterial3: true,
-          scaffoldBackgroundColor: Colors.white, // 전체 배경색을 흰색으로 깔끔하게 설정
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black, // 앱바 글자색
-            elevation: 0, // 앱바 그림자 제거
-          ),
+        ChangeNotifierProvider(create: (_) => ThemeViewModel()),
+        ChangeNotifierProvider(
+          create: (_) => HomeViewModel(AuthService(), InviteService())..init(),
         ),
-        // 스플래시 → AuthScreen → HomeScreen 초기 진입 플로우
-        home: const SplashScreen(),
+      ],
+      child: Consumer<ThemeViewModel>(
+        builder: (_, themeVm, __) => MaterialApp(
+          title: 'Venture',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeVm.themeMode,
+          theme: _buildTheme(Brightness.light),
+          darkTheme: _buildTheme(Brightness.dark),
+          builder: (context, child) {
+            return NotificationPopupOverlay(child: child!);
+          },
+          home: const SplashScreen(),
+        ),
       ),
+    );
+  }
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    return ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFFD6706D),
+        brightness: brightness,
+      ),
+      useMaterial3: true,
+      brightness: brightness,
+      scaffoldBackgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      appBarTheme: AppBarTheme(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        foregroundColor: isDark ? Colors.white : Colors.black,
+        elevation: 0,
+      ),
+      cardColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      dividerColor: isDark ? Colors.white12 : Colors.grey.shade200,
     );
   }
 }

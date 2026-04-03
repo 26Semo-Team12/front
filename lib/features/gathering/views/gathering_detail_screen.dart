@@ -18,7 +18,9 @@ class GatheringDetailScreen extends StatelessWidget {
       create: (ctx) => GatheringDetailViewModel(
         initialInvitation: invitation,
         onUpdateGlobalMeta: (id, title, img) {
-          ctx.read<HomeViewModel>().updateInvitationMeta(id, newTitle: title, newImageUrl: img);
+          try {
+            ctx.read<HomeViewModel>().updateInvitationMeta(id, newTitle: title, newImageUrl: img);
+          } catch (_) {}
         },
       ),
       child: Scaffold(

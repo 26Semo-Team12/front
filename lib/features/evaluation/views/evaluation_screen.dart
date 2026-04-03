@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 import '../../../core/models/user_profile.dart';
 import '../models/evaluation.dart';
 import '../viewmodels/evaluation_view_model.dart';
+import '../../../core/utils/image_utils.dart';
 
 class EvaluationScreen extends StatelessWidget {
-  final String gatheringId;
+  final int gatheringId;
   final List<UserProfile> participants;
   final int currentUserId;
 
@@ -116,7 +117,7 @@ class _EvaluationScreenContentState extends State<_EvaluationScreenContent> {
                             width: 2,
                           ),
                           image: DecorationImage(
-                            image: NetworkImage(
+                            image: resolveImage(
                               evaluatee.profileImageUrl.isNotEmpty
                                   ? evaluatee.profileImageUrl
                                   : 'https://via.placeholder.com/150',

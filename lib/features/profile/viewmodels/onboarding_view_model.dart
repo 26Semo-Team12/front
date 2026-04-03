@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/enums.dart';
-import '../../../core/services/mock_api_service.dart';
+import '../../../core/models/user_profile.dart';
+import '../../auth/services/auth_service.dart';
 
 class OnboardingViewModel extends ChangeNotifier {
-  final MockApiService _mockApiService = MockApiService.instance;
+  final AuthService _authService = AuthService();
+
+  final String? email;
+  final String? password;
+
+  OnboardingViewModel({this.email, this.password});
 
   int _currentStep = 0;
   int get currentStep => _currentStep;
@@ -12,12 +18,14 @@ class OnboardingViewModel extends ChangeNotifier {
   String _name = '';
   int? _birthYear;
   GenderType? _gender;
-  String _region = '';
+  LocationModel? _location;
 
   String get name => _name;
   int? get birthYear => _birthYear;
   GenderType? get gender => _gender;
-  String get region => _region;
+  LocationModel? get location => _location;
+  // 하위 호환용
+  String get region => _location?.displayLabel ?? '';
 
   String? _step1Error;
   String? get step1Error => _step1Error;
@@ -50,8 +58,8 @@ class OnboardingViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setRegion(String value) {
-    _region = value;
+  void setRegion(LocationModel loc) {
+    _location = loc;
     _step1Error = null;
     notifyListeners();
   }
@@ -72,8 +80,8 @@ class OnboardingViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    if (_birthYear == null || _birthYear! < 1900 || _birthYear! > DateTime.now().year) {
-      _step1Error = '올바른 출생 연도를 입력해 주세요.';
+    if (_birthYear == null || _birthYear! < 1925 || _birthYear! > 2005) {
+      _step1Error = '올바른 출생 연도를 입력해 주세요. (1925-2005)';
       notifyListeners();
       return false;
     }
@@ -82,8 +90,8 @@ class OnboardingViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    if (_region.trim().isEmpty) {
-      _step1Error = '주 활동 지역을 입력해 주세요.';
+    if (_location == null) {
+      _step1Error = '주 활동 지역을 선택해 주세요.';
       notifyListeners();
       return false;
     }
@@ -123,18 +131,35 @@ class OnboardingViewModel extends ChangeNotifier {
     if (!validateStep2()) return;
 
     _isLoading = true;
+    _step2Error = null;
     notifyListeners();
 
     try {
-      await _mockApiService.patchMe(
-        name: _name.trim(),
-        interests: _selectedInterests.toList(),
-        gender: _gender,
-      );
-      // isProfileCompleted는 백엔드나 MockApiService에서 관리해야 하지만, 지금은 호출만 함.
+      // 나이 계산: 현재 연도 - 출생연도
+      final currentYear = DateTime.now().year;
+      final age = currentYear - (_birthYear ?? currentYear);
+
+      final signupData = {
+        'email': email,
+        'password': password,
+        'name': _name.trim(),
+        'age': age,
+        'gender': _gender?.name.toLowerCase() ?? 'other',
+        'location': _location?.displayLabel ?? '',
+        'interests': _selectedInterests.toList(),
+        'preferredSize': 'any',
+        'profileImageBase64': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      };
+
+      await _authService.signUp(signupData);
+
+      if (email != null && password != null) {
+        await _authService.login(email!, password!);
+      }
+
       onSuccess();
     } catch (e) {
-      _step2Error = '프로필 저장에 실패했습니다.';
+      _step2Error = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();

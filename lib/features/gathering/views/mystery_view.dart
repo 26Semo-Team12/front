@@ -31,9 +31,10 @@ class _MysteryViewState extends State<MysteryView> with SingleTickerProviderStat
   }
 
   String _formatDateTime(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '${dt.year}.${dt.month.toString().padLeft(2,'0')}.${dt.day.toString().padLeft(2,'0')} $h:$m';
+    final kst = dt.isUtc ? dt.add(const Duration(hours: 9)) : dt;
+    final ampm = kst.hour < 12 ? '오전' : '오후';
+    final hour12 = kst.hour == 0 ? 12 : (kst.hour > 12 ? kst.hour - 12 : kst.hour);
+    return '${kst.year}.${kst.month.toString().padLeft(2,'0')}.${kst.day.toString().padLeft(2,'0')} $ampm $hour12시';
   }
 
   @override
@@ -103,10 +104,12 @@ class _MysteryViewState extends State<MysteryView> with SingleTickerProviderStat
                         backgroundColor: const Color(0xFFD6706D),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: viewModel.isLoading ? null : () => viewModel.convertToRegular(() => Navigator.pop(context)),
+                      onPressed: viewModel.isLoading ? null : () {
+                        viewModel.convertToRegular(() => Navigator.pop(context, true));
+                      },
                       child: viewModel.isLoading
                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
-                          : const Text('정기 모임으로 전환', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('장기 모임으로 전환', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -117,7 +120,9 @@ class _MysteryViewState extends State<MysteryView> with SingleTickerProviderStat
                       style: TextButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: viewModel.isLoading ? null : () => viewModel.expireInvitation(() => Navigator.pop(context)),
+                      onPressed: viewModel.isLoading ? null : () {
+                        viewModel.expireInvitation(() => Navigator.pop(context, true));
+                      },
                       child: const Text('만료시키기', style: TextStyle(color: Colors.white54, fontSize: 16)),
                     ),
                   ),
