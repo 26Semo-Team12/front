@@ -44,7 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showDeleteAccountDialog() {
+  void _showDeleteAccountDialog(ProfileViewModel viewModel) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _snack('회원 탈퇴가 처리되었습니다.');
+              viewModel.deleteAccount(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

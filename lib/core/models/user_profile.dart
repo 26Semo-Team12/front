@@ -98,15 +98,23 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as int? ?? 0,
+      id: json['id'] is int 
+          ? json['id'] as int 
+          : int.tryParse(json['id']?.toString() ?? '') ?? 0,
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? '알 수 없음',
-      birthYear: json['birth_year'] as int?,
+      birthYear: json['birth_year'] is int 
+          ? json['birth_year'] as int 
+          : int.tryParse(json['birth_year']?.toString() ?? ''),
       gender: json['gender'] != null ? GenderType.fromString(json['gender'] as String) : null,
       region: json['region'] as String? ?? '알 수 없음',
       profileImageUrl: json['profile_image_url'] as String? ?? '',
-      reputationScore: json['reputation_score'] as int? ?? 0,
-      onboardingStep: json['onboarding_step'] as int? ?? 1,
+      reputationScore: json['reputation_score'] is int 
+          ? json['reputation_score'] as int 
+          : int.tryParse(json['reputation_score']?.toString() ?? '') ?? 0,
+      onboardingStep: json['onboarding_step'] is int 
+          ? json['onboarding_step'] as int 
+          : int.tryParse(json['onboarding_step']?.toString() ?? '') ?? 1,
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
     );
   }

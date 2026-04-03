@@ -32,23 +32,64 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmFocus = FocusNode();
+  final _scrollController = ScrollController();
+  late AuthViewModel _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    // VM 상태 변화 감지하여 자동 포커스 및 스크롤
+    _vm = context.read<AuthViewModel>();
+    _vm.addListener(_onVMChanged);
+  }
+
+  void _onVMChanged() {
+    if (!mounted) return;
+    if (_vm.step != AuthStep.email) {
+      if (_passwordFocus.canRequestFocus) {
+        _passwordFocus.requestFocus();
+      }
+      // 살짝 위로 스크롤하여 강조
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            80,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    } else {
+      // 이메일로 돌아올 때 리셋
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
+    _vm.removeListener(_onVMChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
     _confirmFocus.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _onAuthSuccess(bool isSignup) {
+  void _onAuthSuccess(bool isSignup, {String? email, String? password}) {
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => isSignup ? const OnboardingScreen() : const HomeScreen(),
+        builder: (_) =>
+            isSignup ? OnboardingScreen(email: email, password: password) : const HomeScreen(),
       ),
       (route) => false,
     );
@@ -61,8 +102,10 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
     return Scaffold(
       body: SafeArea(
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => FocusScope.of(context).unfocus(),
           child: SingleChildScrollView(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,7 +163,11 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset('assets/images/logo_2.png', height: 60, fit: BoxFit.contain);
+    return Image.asset(
+      'assets/images/logo_2.png',
+      height: 60,
+      fit: BoxFit.contain,
+    );
   }
 }
 
@@ -158,7 +205,9 @@ class _EmailStep extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           child: Text(
             submitted
-                ? (vm.step == AuthStep.password ? '비밀번호를 입력해 주세요.' : '비밀번호를 설정해 주세요.')
+                ? (vm.step == AuthStep.password
+                      ? '비밀번호를 입력해 주세요.'
+                      : '비밀번호를 설정해 주세요.')
                 : '이메일을 입력해 주세요.',
             key: ValueKey('sub_${vm.step}'),
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
@@ -179,7 +228,11 @@ class _EmailStep extends StatelessWidget {
                     vm.goBackToEmail();
                     controller.clear();
                   },
-                  child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFD6706D)),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Color(0xFFD6706D),
+                  ),
                 )
               : null,
         ),
@@ -195,7 +248,7 @@ class _PasswordStep extends StatefulWidget {
   final FocusNode passwordFocus;
   final FocusNode confirmFocus;
   final AuthViewModel vm;
-  final void Function(bool) onSuccess;
+  final void Function(bool, {String? email, String? password}) onSuccess;
 
   const _PasswordStep({
     required this.passwordController,
@@ -220,10 +273,14 @@ class _PasswordStepState extends State<_PasswordStep>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _ctrl.forward();
     // 자동 포커스
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -300,7 +357,7 @@ class _PasswordStepState extends State<_PasswordStep>
 // ── 메인 버튼 ─────────────────────────────────────────────────────────────────
 class _MainButton extends StatelessWidget {
   final AuthViewModel vm;
-  final void Function(bool) onSuccess;
+  final void Function(bool, {String? email, String? password}) onSuccess;
 
   const _MainButton({required this.vm, required this.onSuccess});
 
@@ -323,7 +380,7 @@ class _MainButton extends StatelessWidget {
               ? null
               : () {
                   if (vm.step == AuthStep.email) {
-                    vm.submitEmail();
+                    vm.onContinuePressed();
                   } else {
                     vm.submitPassword(onSuccess);
                   }
@@ -332,17 +389,27 @@ class _MainButton extends StatelessWidget {
             backgroundColor: const Color(0xFFD6706D),
             disabledBackgroundColor: Colors.grey.shade300,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             elevation: 0,
           ),
           child: vm.isLoading
               ? const SizedBox(
                   width: 22,
                   height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
                 )
-              : Text(label,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              : Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
         ),
       ),
     );
@@ -396,13 +463,20 @@ class _InputField extends StatelessWidget {
         hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
         filled: true,
         fillColor: readOnly
-            ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100)
-            : (isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade50),
+            ? (isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.shade100)
+            : (isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.grey.shade50),
         suffixIcon: suffix != null
             ? Padding(padding: const EdgeInsets.only(right: 12), child: suffix)
             : null,
         suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -410,7 +484,8 @@ class _InputField extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-              color: isDark ? Colors.white12 : Colors.grey.shade200),
+            color: isDark ? Colors.white12 : Colors.grey.shade200,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -439,16 +514,21 @@ class _TermsText extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           style: TextStyle(
-              fontSize: 12, color: Colors.grey.shade500, height: 1.6),
+            fontSize: 12,
+            color: Colors.grey.shade500,
+            height: 1.6,
+          ),
           children: const [
             TextSpan(text: '계속하면 '),
             TextSpan(
-                text: '서비스 이용약관',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+              text: '서비스 이용약관',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             TextSpan(text: ' 및 '),
             TextSpan(
-                text: '개인정보 처리방침',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+              text: '개인정보 처리방침',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             TextSpan(text: '에 동의하는 것으로 간주됩니다.'),
           ],
         ),

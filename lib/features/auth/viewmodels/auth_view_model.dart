@@ -28,9 +28,10 @@ class AuthViewModel extends ChangeNotifier {
   bool get obscurePassword => _obscurePassword;
   bool get obscureConfirm => _obscureConfirm;
 
-  // 하위 호환
+  // 하위 호환 및 상태
   bool get isEmailSubmitted => _step != AuthStep.email;
-  bool get isExistingUser => _step == AuthStep.password;
+  bool _exists = false;
+  bool get isExistingUser => _exists;
 
   void updateEmail(String v) {
     _email = v;
@@ -74,31 +75,44 @@ class AuthViewModel extends ChangeNotifier {
     return true;
   }
 
-  /// 이메일 확인 → check-email API 모의
-  Future<void> submitEmail() async {
+  /// 이메일 확인 → check-email API 호출
+  Future<void> onContinuePressed() async {
     if (!_validateEmail()) return;
     _isLoading = true;
+    _emailError = null;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final data = await _authService.checkEmail(_email.trim());
+      
+      _exists = data['exists'] ?? false;
+      final nextStep = data['nextStep'];
 
-    // Mock: test@test.com = 기존 회원
-    final exists = _email.trim() == 'test@test.com';
-    _step = exists ? AuthStep.password : AuthStep.signup;
-
-    _isLoading = false;
-    notifyListeners();
+      if (nextStep == 'LOGIN') {
+        _step = AuthStep.password;
+      } else if (nextStep == 'SIGNUP') {
+        _step = AuthStep.signup;
+      } else {
+        // 기본값 처리
+        _step = _exists ? AuthStep.password : AuthStep.signup;
+      }
+    } catch (e) {
+      _emailError = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  Future<void> submitPassword(void Function(bool isSignup) onSuccess) async {
+  Future<void> submitPassword(void Function(bool isSignup, {String? email, String? password}) onSuccess) async {
     if (_password.trim().isEmpty) {
       _passwordError = '비밀번호를 입력해 주세요.';
       notifyListeners();
       return;
     }
     if (_step == AuthStep.signup) {
-      if (_password.trim().length < 6) {
-        _passwordError = '비밀번호는 6자리 이상이어야 합니다.';
+      if (_password.trim().length < 8) {
+        _passwordError = '비밀번호는 8자리 이상이어야 합니다.';
         notifyListeners();
         return;
       }
@@ -110,13 +124,21 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     _isLoading = true;
+    _passwordError = null;
     notifyListeners();
 
     try {
-      await _authService.signInWithEmail(_email.trim());
-      onSuccess(_step == AuthStep.signup);
+      if (_step == AuthStep.password) {
+        // 로그인 루틴
+        await _authService.login(_email.trim(), _password.trim());
+        onSuccess(false);
+      } else {
+        // 회원가입 전초 단계: Onboarding으로 이동
+        // 여기서 실제 가입을 하는게 아니라 정보를 들고 온보딩으로 넘김
+        onSuccess(true, email: _email.trim(), password: _password.trim());
+      }
     } catch (e) {
-      _passwordError = '처리에 실패했습니다: $e';
+      _passwordError = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();
