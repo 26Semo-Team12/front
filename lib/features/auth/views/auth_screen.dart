@@ -275,16 +275,6 @@ class _AuthScreenContentState extends State<_AuthScreenContent> {
                 icon: _GoogleIcon(),
                 label: 'Google 계정으로 계속하기',
               ),
-              const SizedBox(height: 12),
-
-              // ── Apple 로그인 버튼 ──
-              _SocialLoginButton(
-                onTap: (viewModel.isLoading || viewModel.isEmailSubmitted)
-                    ? null
-                    : () => viewModel.onAppleSignIn(_onAuthSuccess),
-                icon: const Icon(Icons.apple, size: 22, color: Colors.black),
-                label: 'Apple 계정으로 계속하기',
-              ),
               const SizedBox(height: 32),
 
               // ── 이용약관 안내 텍스트 ──
