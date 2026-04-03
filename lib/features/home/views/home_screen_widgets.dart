@@ -785,10 +785,9 @@ class InvitationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD6706D), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD6706D).withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -895,12 +894,15 @@ class InvitationCard extends StatelessWidget {
     );
   }
 
-  void _openDetail(BuildContext context) {
-    Navigator.of(context).push(
+  void _openDetail(BuildContext context) async {
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => GatheringDetailScreen(invitation: invitation),
       ),
     );
+    if (result == true && context.mounted) {
+      context.read<HomeViewModel>().refresh();
+    }
   }
 
   Widget _placeholder() {

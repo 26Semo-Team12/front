@@ -2,8 +2,16 @@
 
 enum InvitationType { newInvitation, longTerm, expired }
 
+/// 서버 message에서 "이번 모임은 ... 준비했어요." 시간 안내 문구를 제거
+String _stripTimeGuide(String msg) {
+  // 패턴: "이번 모임은 ... 준비했어요." (줄바꿈 포함)
+  final cleaned = msg.replaceAll(RegExp(r'\s*이번 모임은[^.]*준비했어요\.\s*'), '').trim();
+  return cleaned.isNotEmpty ? cleaned : msg.trim();
+}
+
 class Invitation {
   final String id;
+  final int? invitationId;
   final InvitationType type;
   final String title;
   final String message;
@@ -15,6 +23,7 @@ class Invitation {
 
   Invitation({
     required this.id,
+    this.invitationId,
     required this.type,
     required this.title,
     this.message = '',
@@ -56,13 +65,19 @@ class Invitation {
         ? rawMemberCount
         : int.tryParse(rawMemberCount?.toString() ?? '') ?? 0;
 
-    // message: 초대 메시지 (카드에 표시)
-    final invMessage = json['message']?.toString() ?? '';
+    // invitationId: 서버의 초대장 고유 ID (respond API에 사용)
+    final rawInvId = json['id'];
+    final invitationId = rawInvId is int ? rawInvId : int.tryParse(rawInvId?.toString() ?? '');
+
+    // message: 초대 메시지 (카드에 표시) - 시간 안내 문구 제거
+    final rawMessage = json['message']?.toString() ?? '';
+    final invMessage = _stripTimeGuide(rawMessage);
     // title: gathering 제목 (상세 화면에 표시)
     final gatheringTitle = gathering?['title']?.toString() ?? '새로운 초대';
 
     return Invitation(
       id: id,
+      invitationId: invitationId,
       type: type,
       title: gatheringTitle,
       message: invMessage,
@@ -78,10 +93,12 @@ class Invitation {
     String? message,
     String? imageUrl,
     bool? isRead,
+    InvitationType? type,
   }) {
     return Invitation(
       id: id,
-      type: type,
+      invitationId: invitationId,
+      type: type ?? this.type,
       title: title ?? this.title,
       message: message ?? this.message,
       dateTime: dateTime,
