@@ -14,6 +14,7 @@ class HomeViewModel extends ChangeNotifier {
   final InviteService _inviteService;
   UserProfile? _currentUser;
   List<Invitation> _invitations = [];
+  final Set<String> _readInvitationIds = {};
   // 멀티 셀렉트 필터: 기본값 = 새 초대장 + 장기 모임 활성화
   Set<InvitationType> _activeFilters = {
     InvitationType.newInvitation,
@@ -114,6 +115,7 @@ class HomeViewModel extends ChangeNotifier {
           final inv = Invitation.fromJson(json as Map<String, dynamic>);
           target.add(Invitation(
             id: inv.id,
+            invitationId: inv.invitationId,
             type: type,
             title: inv.title,
             message: inv.message,
@@ -121,6 +123,7 @@ class HomeViewModel extends ChangeNotifier {
             location: inv.location,
             imageUrl: inv.imageUrl,
             memberCount: inv.memberCount,
+            isRead: _readInvitationIds.contains(inv.id),
           ));
         } catch (parseErr) {
           debugPrint('HomeViewModel: Failed to parse invitation: $parseErr');
@@ -307,9 +310,20 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void markInvitationAsRead(String id) {
+    _readInvitationIds.add(id);
     final index = _invitations.indexWhere((inv) => inv.id == id);
     if (index != -1 && !_invitations[index].isRead) {
       _invitations[index] = _invitations[index].copyWith(isRead: true);
+      notifyListeners();
+    }
+  }
+
+  /// 초대장 상태를 즉시 변경 (수락 → longTerm, 거절 → expired)
+  void changeInvitationType(String id, InvitationType newType) {
+    final index = _invitations.indexWhere((inv) => inv.id == id);
+    if (index != -1) {
+      _invitations[index] = _invitations[index].copyWith(type: newType, isRead: true);
+      _readInvitationIds.add(id);
       notifyListeners();
     }
   }

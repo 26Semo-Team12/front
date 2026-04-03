@@ -4,11 +4,13 @@ import '../models/gathering.dart';
 import '../models/schedule_option.dart';
 import '../services/gathering_service.dart';
 import '../services/schedule_service.dart';
+import '../services/invite_service.dart';
 import '../../auth/services/auth_service.dart';
 
 class GatheringDetailViewModel extends ChangeNotifier {
   final GatheringService _gatheringService = GatheringService();
   final ScheduleService _scheduleService = ScheduleService();
+  final InviteService _inviteService = InviteService();
   final AuthService _authService = AuthService();
 
   String? _currentUserEmail;
@@ -180,18 +182,34 @@ class GatheringDetailViewModel extends ChangeNotifier {
   Future<void> convertToRegular(VoidCallback onSuccess) async {
     _isLoading = true;
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 600));
-    _isLoading = false;
-    notifyListeners();
-    onSuccess();
+    try {
+      final invId = _invitation.invitationId;
+      if (invId != null) {
+        await _inviteService.respondToInvitation(invId, 'ACCEPT');
+      }
+    } catch (e) {
+      debugPrint('Failed to accept invitation: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+      onSuccess();
+    }
   }
 
   Future<void> expireInvitation(VoidCallback onSuccess) async {
     _isLoading = true;
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 600));
-    _isLoading = false;
-    notifyListeners();
-    onSuccess();
+    try {
+      final invId = _invitation.invitationId;
+      if (invId != null) {
+        await _inviteService.respondToInvitation(invId, 'REJECT');
+      }
+    } catch (e) {
+      debugPrint('Failed to reject invitation: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+      onSuccess();
+    }
   }
 }
