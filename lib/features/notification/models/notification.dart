@@ -42,17 +42,19 @@ class NotificationItem {
   }
 
   static NotificationType _parseType(String? type) {
-    switch (type?.toLowerCase()) {
-      case 'invite':
+    switch (type?.toUpperCase()) {
+      case 'INVITE':
         return NotificationType.invite;
-      case 'chat':
+      case 'CHAT':
         return NotificationType.chat;
-      case 'match':
+      case 'MATCH':
         return NotificationType.match;
-      case 'evaluation':
+      case 'EVALUATION':
         return NotificationType.evaluation;
-      case 'schedule':
+      case 'SCHEDULE':
         return NotificationType.schedule;
+      case 'SYSTEM':
+        return NotificationType.system;
       default:
         return NotificationType.system;
     }

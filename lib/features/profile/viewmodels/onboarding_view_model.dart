@@ -135,24 +135,24 @@ class OnboardingViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 나이 계산: 2024 - 출생연도
-      final age = 2024 - (_birthYear ?? 0);
-      
+      // 나이 계산: 현재 연도 - 출생연도
+      final currentYear = DateTime.now().year;
+      final age = currentYear - (_birthYear ?? currentYear);
+
       final signupData = {
         'email': email,
         'password': password,
         'name': _name.trim(),
         'age': age,
-        'gender': _gender?.name.toLowerCase() ?? 'other', // male, female
+        'gender': _gender?.name.toLowerCase() ?? 'other',
         'location': _location?.displayLabel ?? '',
         'interests': _selectedInterests.toList(),
-        'preferredSize': 'any', // 기본값
-        'profileImageBase64': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // 최소 투명 PNG placeholder
+        'preferredSize': 'any',
+        'profileImageBase64': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
       };
 
       await _authService.signUp(signupData);
-      
-      // 가입 후 바로 로그인을 시도하여 토큰을 얻어야 할 수도 있음
+
       if (email != null && password != null) {
         await _authService.login(email!, password!);
       }

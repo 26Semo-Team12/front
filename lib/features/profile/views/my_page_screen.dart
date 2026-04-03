@@ -417,7 +417,7 @@ class _ProfileHeader extends StatelessWidget {
                 color: cs.onSurface)),
         const SizedBox(height: 6),
         Text(
-          '${user.birthYear ?? '연도미상'} · ${user.gender?.displayName ?? '성별미상'}',
+          '${user.displayBirthYear} · ${user.gender?.displayName ?? '성별미상'}',
           style: TextStyle(fontSize: 14, color: cs.onSurface.withValues(alpha: 0.5)),
         ),
       ],

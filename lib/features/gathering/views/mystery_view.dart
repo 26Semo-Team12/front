@@ -31,9 +31,10 @@ class _MysteryViewState extends State<MysteryView> with SingleTickerProviderStat
   }
 
   String _formatDateTime(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '${dt.year}.${dt.month.toString().padLeft(2,'0')}.${dt.day.toString().padLeft(2,'0')} $h:$m';
+    final kst = dt.isUtc ? dt.add(const Duration(hours: 9)) : dt;
+    final ampm = kst.hour < 12 ? '오전' : '오후';
+    final hour12 = kst.hour == 0 ? 12 : (kst.hour > 12 ? kst.hour - 12 : kst.hour);
+    return '${kst.year}.${kst.month.toString().padLeft(2,'0')}.${kst.day.toString().padLeft(2,'0')} $ampm $hour12시';
   }
 
   @override

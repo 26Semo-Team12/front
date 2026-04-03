@@ -221,7 +221,7 @@ class UserProfileCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${user.birthYear ?? '연도미상'} · ${user.gender?.displayName ?? '성별미상'}',
+                        '${user.displayBirthYear} · ${user.gender?.displayName ?? '성별미상'}',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 13,
@@ -726,11 +726,13 @@ class _FadeSlideItemState extends State<FadeSlideItem>
 
 // ─── InvitationCard (이미지만, 탭 시 로딩 → 상세 팝업) ─────────────────────
 
-/// 날짜 포맷 함수 (YYYY년 M월 D일 HH:mm)
+/// 날짜 포맷 함수 (YYYY년 M월 D일 오전/오후 X시)
 String formatDateTime(DateTime dt) {
-  final hour = dt.hour.toString().padLeft(2, '0');
-  final minute = dt.minute.toString().padLeft(2, '0');
-  return '${dt.year}년 ${dt.month}월 ${dt.day}일 $hour:$minute';
+  // UTC → 한국 시간 (UTC+9)
+  final kst = dt.isUtc ? dt.add(const Duration(hours: 9)) : dt;
+  final ampm = kst.hour < 12 ? '오전' : '오후';
+  final hour12 = kst.hour == 0 ? 12 : (kst.hour > 12 ? kst.hour - 12 : kst.hour);
+  return '${kst.year}년 ${kst.month}월 ${kst.day}일 $ampm $hour12시';
 }
 
 class InvitationCard extends StatelessWidget {
@@ -754,7 +756,11 @@ class InvitationCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => _openDetail(context),
+      onTap: () {
+        // 읽음 처리
+        context.read<HomeViewModel>().markInvitationAsRead(invitation.id);
+        _openDetail(context);
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: cardChild,
@@ -794,18 +800,19 @@ class InvitationCard extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             _buildContentImage(),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(12),
+            if (!invitation.isRead)
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
-                child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
               ),
-            ),
           ],
         ),
       ),
@@ -896,17 +903,23 @@ class InvitationCard extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() => Container(
-        height: 160,
-        width: double.infinity,
-        color: Colors.grey.shade300,
-        child: const Center(
-          child: Text(
-            '예시 초대장 이미지',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
-          ),
+  Widget _placeholder() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      color: Colors.grey.shade300,
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: Text(
+          invitation.message.isNotEmpty ? invitation.message : invitation.title,
+          style: const TextStyle(color: Colors.black87, fontSize: 15, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+          maxLines: 4,
+          overflow: TextOverflow.ellipsis,
         ),
-      );
+      ),
+    );
+  }
 }
 
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
 
@@ -36,20 +37,33 @@ class NotificationViewModel extends ChangeNotifier {
     _socket = IO.io('http://43.201.46.164:3000/notifications', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
+      'auth': {'accessToken': ''},
     });
 
-    _socket!.onConnect((_) {
-      debugPrint('Connected to notification socket');
-      _socket!.emit('authenticate', {'userId': userId});
-    });
+    // 토큰 설정 후 연결
+    SharedPreferences.getInstance().then((prefs) {
+      final token = prefs.getString('access_token') ?? '';
+      _socket = IO.io('http://43.201.46.164:3000/notifications', <String, dynamic>{
+        'transports': ['websocket'],
+        'autoConnect': false,
+        'auth': {'accessToken': token},
+      });
 
-    _socket!.on('notification', (data) {
-      final newNotif = NotificationItem.fromJson(data);
-      _notifications.insert(0, newNotif);
-      notifyListeners();
-    });
+      _socket!.onConnect((_) {
+        debugPrint('Connected to notification socket');
+      });
 
-    _socket!.connect();
+      _socket!.on('notification', (data) {
+        final notifData = data['notification'] as Map<String, dynamic>?;
+        if (notifData != null) {
+          final newNotif = NotificationItem.fromJson(notifData);
+          _notifications.insert(0, newNotif);
+          notifyListeners();
+        }
+      });
+
+      _socket!.connect();
+    });
   }
 
   void _loadMockData() {

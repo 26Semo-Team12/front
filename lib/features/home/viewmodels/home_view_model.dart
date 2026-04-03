@@ -38,47 +38,98 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> init() async {
+    // 1. 유저 정보 로드
     try {
       _currentUser = await _authService.getMe();
-      if (_currentUser?.email == 'asdf@asdf.asdf') {
-        // 데모 계정: 각 타입 1개씩 mock 데이터
-        _invitations = [
-          Invitation(
-            id: 'mock-new',
-            type: InvitationType.newInvitation,
-            title: '주말 등산 모임',
-            dateTime: DateTime(2025, 8, 10, 9, 0),
-            location: '북한산 국립공원',
-            imageUrl: 'https://picsum.photos/seed/hiking/400/200',
-            memberCount: 6,
-          ),
-          Invitation(
-            id: 'mock-long',
-            type: InvitationType.longTerm,
-            title: '매주 수요일 요리 스터디',
-            dateTime: DateTime(2025, 8, 20, 18, 30),
-            location: '마포구 쿠킹 스튜디오',
-            imageUrl: 'https://picsum.photos/seed/cooking/400/200',
-            memberCount: 5,
-          ),
-          Invitation(
-            id: 'mock-expired',
-            type: InvitationType.expired,
-            title: '봄 소풍 피크닉',
-            dateTime: DateTime(2025, 4, 5, 11, 0),
-            location: '한강공원 여의도',
-            imageUrl: 'https://picsum.photos/seed/picnic/400/200',
-            memberCount: 10,
-          ),
-        ];
-      } else {
-        final realInvites = await _inviteService.getMyInvitations();
-        _invitations = realInvites.map((e) => Invitation.fromJson(e)).toList();
+      // 모임 가능 시간도 로드
+      try {
+        final slots = await _authService.getAvailability();
+        _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('HomeViewModel: getMe() failed: $e');
+    }
+
+    // 2. 초대장 로드
+    if (_currentUser?.email == 'asdf@asdf.asdf') {
+      _invitations = [
+        Invitation(
+          id: 'mock-new',
+          type: InvitationType.newInvitation,
+          title: '주말 등산 모임',
+          dateTime: DateTime(2025, 8, 10, 9, 0),
+          location: '북한산 국립공원',
+          imageUrl: 'https://picsum.photos/seed/hiking/400/200',
+          memberCount: 6,
+        ),
+        Invitation(
+          id: 'mock-long',
+          type: InvitationType.longTerm,
+          title: '매주 수요일 요리 스터디',
+          dateTime: DateTime(2025, 8, 20, 18, 30),
+          location: '마포구 쿠킹 스튜디오',
+          imageUrl: 'https://picsum.photos/seed/cooking/400/200',
+          memberCount: 5,
+        ),
+        Invitation(
+          id: 'mock-expired',
+          type: InvitationType.expired,
+          title: '봄 소풍 피크닉',
+          dateTime: DateTime(2025, 4, 5, 11, 0),
+          location: '한강공원 여의도',
+          imageUrl: 'https://picsum.photos/seed/picnic/400/200',
+          memberCount: 10,
+        ),
+      ];
+    } else {
+      await _loadInvitations();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _loadInvitations() async {
+    final allInvitations = <Invitation>[];
+
+    // PENDING → 새 초대장
+    await _fetchInvitationsByStatus('PENDING', InvitationType.newInvitation, allInvitations);
+    // ACCEPTED → 장기 모임
+    await _fetchInvitationsByStatus('ACCEPTED', InvitationType.longTerm, allInvitations);
+    // EXPIRED → 만료된 초대장
+    await _fetchInvitationsByStatus('EXPIRED', InvitationType.expired, allInvitations);
+    // REJECTED → 만료 처리
+    await _fetchInvitationsByStatus('REJECTED', InvitationType.expired, allInvitations);
+
+    _invitations = allInvitations;
+    debugPrint('HomeViewModel: Loaded ${allInvitations.length} invitations total');
+  }
+
+  Future<void> _fetchInvitationsByStatus(String status, InvitationType type, List<Invitation> target) async {
+    try {
+      final list = await _inviteService.getMyInvitations(status: status);
+      debugPrint('HomeViewModel: $status → ${list.length} raw items');
+      for (final json in list) {
+        try {
+          debugPrint('HomeViewModel: parsing invitation: $json');
+          final inv = Invitation.fromJson(json as Map<String, dynamic>);
+          target.add(Invitation(
+            id: inv.id,
+            type: type,
+            title: inv.title,
+            message: inv.message,
+            dateTime: inv.dateTime,
+            location: inv.location,
+            imageUrl: inv.imageUrl,
+            memberCount: inv.memberCount,
+          ));
+        } catch (parseErr) {
+          debugPrint('HomeViewModel: Failed to parse invitation: $parseErr');
+          debugPrint('HomeViewModel: Raw JSON: $json');
+        }
       }
     } catch (e) {
-      debugPrint('HomeViewModel.init() failed: $e');
+      debugPrint('HomeViewModel: Failed to load $status invitations: $e');
     }
-    notifyListeners();
   }
 
   void toggleFilter(InvitationType type) {
@@ -170,11 +221,13 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> updateAvailableTimes(List<TimeSlot> slots) async {
     if (_currentUser == null) return;
     try {
-      // Backend doesn't support availableTimes yet, keeping state updated locally.
-      _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      final updated = await _authService.updateAvailability(slots);
+      _currentUser = _currentUser?.copyWith(availableTimes: updated);
       notifyListeners();
     } catch (e) {
       debugPrint('Home: Available times update failed: $e');
+      _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      notifyListeners();
     }
   }
 
@@ -207,10 +260,23 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> refreshUser() async {
     try {
       _currentUser = await _authService.getMe();
+      try {
+        final slots = await _authService.getAvailability();
+        _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      } catch (_) {}
       notifyListeners();
     } catch (e) {
       debugPrint('HomeViewModel.refreshUser() failed: $e');
     }
+  }
+
+  /// 풀 투 리프레시 - 유저 정보 + 초대장 모두 새로고침
+  Future<void> refresh() async {
+    await refreshUser();
+    if (_currentUser?.email != 'asdf@asdf.asdf') {
+      await _loadInvitations();
+    }
+    notifyListeners();
   }
 
   void updateInvitationMeta(String id, {String? newTitle, String? newImageUrl}) {
@@ -220,6 +286,14 @@ class HomeViewModel extends ChangeNotifier {
         title: newTitle,
         imageUrl: newImageUrl,
       );
+      notifyListeners();
+    }
+  }
+
+  void markInvitationAsRead(String id) {
+    final index = _invitations.indexWhere((inv) => inv.id == id);
+    if (index != -1 && !_invitations[index].isRead) {
+      _invitations[index] = _invitations[index].copyWith(isRead: true);
       notifyListeners();
     }
   }

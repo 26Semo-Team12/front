@@ -121,8 +121,11 @@ class _HomeScrollView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
+    return RefreshIndicator(
+      color: const Color(0xFFD6706D),
+      onRefresh: () => context.read<HomeViewModel>().refresh(),
+      child: CustomScrollView(
+        slivers: [
         // 앱 이름+설정 — floating: 스크롤 내리면 사라지고, 올리면 바로 나타남
         SliverAppBar(
           floating: true,
@@ -160,6 +163,7 @@ class _HomeScrollView extends StatelessWidget {
           child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
         ),
       ],
+      ),
     );
   }
 }
@@ -274,6 +278,13 @@ class _AnimatedInvitationSliverState extends State<_AnimatedInvitationSliver> {
   void didUpdateWidget(_AnimatedInvitationSliver old) {
     super.didUpdateWidget(old);
     final newIds = widget.invitations.map((e) => e.id).toSet();
+    // 기존 항목 업데이트 + 새 항목 추가
+    final updatedMap = {for (final inv in widget.invitations) inv.id: inv};
+    for (int i = 0; i < _all.length; i++) {
+      if (updatedMap.containsKey(_all[i].id)) {
+        _all[i] = updatedMap[_all[i].id]!;
+      }
+    }
     for (final inv in widget.invitations) {
       if (!_all.any((e) => e.id == inv.id)) _all.add(inv);
     }

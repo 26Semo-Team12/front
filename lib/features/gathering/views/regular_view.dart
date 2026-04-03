@@ -453,8 +453,11 @@ class _RegularViewState extends State<RegularView> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dt = schedule.startAt;
-    final dateStr = '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
-    final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final kst = dt.isUtc ? dt.add(const Duration(hours: 9)) : dt;
+    final dateStr = '${kst.year}.${kst.month.toString().padLeft(2, '0')}.${kst.day.toString().padLeft(2, '0')}';
+    final ampm = kst.hour < 12 ? '오전' : '오후';
+    final hour12 = kst.hour == 0 ? 12 : (kst.hour > 12 ? kst.hour - 12 : kst.hour);
+    final timeStr = '$ampm $hour12시';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

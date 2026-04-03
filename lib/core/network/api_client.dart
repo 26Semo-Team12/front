@@ -1,6 +1,7 @@
 // lib/core/network/api_client.dart
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,7 +68,10 @@ class ApiClient {
   dynamic _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isNotEmpty) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        // 디버그: API 응답 로깅
+        debugPrint('[API] ${response.request?.url} → ${response.body.length > 300 ? response.body.substring(0, 300) : response.body}');
+        return decoded;
       }
       return null;
     } else {

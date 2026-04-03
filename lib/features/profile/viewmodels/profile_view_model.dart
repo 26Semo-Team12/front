@@ -22,6 +22,13 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       _currentUser = await _authService.getMe();
+      // 서버에서 모임 가능 시간도 로드
+      try {
+        final slots = await _authService.getAvailability();
+        _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      } catch (e) {
+        debugPrint('ProfileViewModel: getAvailability() failed: $e');
+      }
     } catch (e) {
       debugPrint('ProfileViewModel._loadUser() failed: $e');
     }
@@ -110,11 +117,14 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> updateAvailableTimes(List<TimeSlot> slots) async {
     if (_currentUser == null) return;
     try {
-      // Backend doesn't support availableTimes yet, keeping state updated locally.
-      _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      final updated = await _authService.updateAvailability(slots);
+      _currentUser = _currentUser?.copyWith(availableTimes: updated);
       notifyListeners();
     } catch (e) {
       debugPrint('Available times update failed: $e');
+      // 서버 실패 시 로컬만 업데이트
+      _currentUser = _currentUser?.copyWith(availableTimes: slots);
+      notifyListeners();
     }
   }
 

@@ -36,10 +36,39 @@ class TimeSlot {
 
   Map<String, dynamic> toJson() => {'weekday': weekday, 'hourIndex': hourIndex};
 
-  factory TimeSlot.fromJson(Map<String, dynamic> json) => TimeSlot(
-    weekday: json['weekday'] as int,
-    hourIndex: json['hourIndex'] as int,
-  );
+  factory TimeSlot.fromJson(Map<String, dynamic> json) {
+    // 서버 형식: {"weekday": "MONDAY", "hour": 19} 또는 로컬 형식: {"weekday": 0, "hourIndex": 19}
+    final rawWeekday = json['weekday'];
+    int weekday;
+    if (rawWeekday is int) {
+      weekday = rawWeekday;
+    } else if (rawWeekday is String) {
+      weekday = _serverWeekdayToIndex(rawWeekday);
+    } else {
+      weekday = 0;
+    }
+
+    final hour = json['hour'] ?? json['hourIndex'];
+    final hourIndex = hour is int ? hour : int.tryParse(hour?.toString() ?? '') ?? 0;
+
+    return TimeSlot(weekday: weekday, hourIndex: hourIndex);
+  }
+
+  /// 서버 API 형식으로 변환: {"weekday": "MONDAY", "hour": 19}
+  Map<String, dynamic> toServerJson() => {
+    'weekday': _serverWeekdayNames[weekday],
+    'hour': hourIndex,
+  };
+
+  /// 서버 응답의 요일 문자열 → int 인덱스
+  static int _serverWeekdayToIndex(String name) {
+    final idx = _serverWeekdayNames.indexOf(name.toUpperCase());
+    return idx >= 0 ? idx : 0;
+  }
+
+  static const List<String> _serverWeekdayNames = [
+    'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY',
+  ];
 
   static const List<String> _weekdayLabels = [
     'MON',
@@ -125,22 +154,53 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    // birthYear: birth_year 또는 birthYear 키 모두 시도
+    final rawBirthYear = json['birth_year'] ?? json['birthYear'];
+    final parsedBirthYear = rawBirthYear is int
+        ? rawBirthYear
+        : int.tryParse(rawBirthYear?.toString() ?? '');
+
+    // age로 birthYear 역산 (birth_year가 없을 때)
+    final rawAge = json['age'] is int ? json['age'] as int : int.tryParse(json['age']?.toString() ?? '');
+    final birthYearFromAge = (parsedBirthYear == null && rawAge != null && rawAge > 0)
+        ? DateTime.now().year - rawAge
+        : null;
+    final finalBirthYear = parsedBirthYear ?? birthYearFromAge;
+
+    // locations: locations 배열 또는 location 문자열로 fallback
+    List<LocationModel> parsedLocations = [];
+    if (json['locations'] is List && (json['locations'] as List).isNotEmpty) {
+      parsedLocations = (json['locations'] as List<dynamic>)
+          .map((e) => LocationModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else {
+      // location 문자열 → LocationModel 변환 (서버는 단순 문자열로 줌)
+      final locStr = (json['location'] as String?)?.trim() ?? '';
+      if (locStr.isNotEmpty) {
+        // "경기도 수원시" 형태면 분리, 아니면 전체를 province로
+        final parts = locStr.split(' ');
+        if (parts.length >= 2) {
+          parsedLocations = [LocationModel(province: parts[0], district: parts.sublist(1).join(' '))];
+        } else {
+          parsedLocations = [LocationModel(province: locStr, district: '')];
+        }
+      }
+    }
+
     return UserProfile(
       id: json['id'] is int
           ? json['id'] as int
           : int.tryParse(json['id']?.toString() ?? '') ?? 0,
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? '알 수 없음',
-      birthYear: json['birth_year'] is int
-          ? json['birth_year'] as int
-          : int.tryParse(json['birth_year']?.toString() ?? ''),
+      birthYear: finalBirthYear,
       gender: json['gender'] != null
           ? GenderType.fromString(json['gender'] as String)
           : null,
-      region: json['region'] as String? ?? '알 수 없음',
-      profileImageUrl: json['profile_image_url'] as String? ?? '',
+      region: json['region'] as String? ?? json['location'] as String? ?? '알 수 없음',
+      profileImageUrl: json['profile_image_url'] as String? ?? json['profileImageUrl'] as String? ?? '',
       isRandomModeEnabled: json['isRandomModeEnabled'] as bool? ?? false,
-      age: json['age'] is int ? json['age'] as int : int.tryParse(json['age']?.toString() ?? '') ?? 0,
+      age: rawAge ?? 0,
       location: json['location'] as String?,
       preferredSize: json['preferredSize'] as String? ?? 'any',
       interests:
@@ -149,7 +209,7 @@ class UserProfile {
               .toList() ??
           [],
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? DateTime.tryParse(json['createdAt'] as String)
           : null,
       reputationScore: json['reputation_score'] is int
           ? json['reputation_score'] as int
@@ -158,9 +218,7 @@ class UserProfile {
           ? json['onboarding_step'] as int
           : int.tryParse(json['onboarding_step']?.toString() ?? '') ?? 1,
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
-      locations: (json['locations'] as List<dynamic>?)
-          ?.map((e) => LocationModel.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+      locations: parsedLocations,
       availableTimes: (json['available_times'] as List<dynamic>?)
           ?.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
@@ -200,6 +258,14 @@ class UserProfile {
     final half = (age % 10) < 5 ? '초반' : '후반';
     if (decade >= 60) return '60대 이상';
     return '$decade대 $half';
+  }
+
+  /// 화면에 표시할 연도/나이 문자열
+  /// 서버는 age만 주므로 birthYear가 없으면 age로 역산한 연도 표시
+  String get displayBirthYear {
+    if (birthYear != null) return birthYear.toString();
+    if (age != null && age! > 0) return (DateTime.now().year - age!).toString();
+    return '연도미상';
   }
 
   static const _unset = Object();

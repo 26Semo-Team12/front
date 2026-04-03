@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/models/enums.dart';
-
 /// 회원가입/로그인을 담당하는 서비스 레이어
 class AuthService {
   final ApiClient _apiClient = ApiClient();
@@ -103,6 +102,22 @@ class AuthService {
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.containsKey('access_token');
+  }
+
+  /// GET /auth/me/availability - 모임 가능 시간 조회
+  Future<List<TimeSlot>> getAvailability() async {
+    final res = await _apiClient.get('/auth/me/availability');
+    final List<dynamic> slots = res['data']['slots'] ?? [];
+    return slots.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// PUT /auth/me/availability - 모임 가능 시간 수정
+  Future<List<TimeSlot>> updateAvailability(List<TimeSlot> slots) async {
+    final res = await _apiClient.put('/auth/me/availability', body: {
+      'slots': slots.map((s) => s.toServerJson()).toList(),
+    });
+    final List<dynamic> updated = res['data']['slots'] ?? [];
+    return updated.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>)).toList();
   }
 }
 
