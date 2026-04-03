@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/tag_colors.dart';
-import '../../../core/services/mock_api_service.dart';
+import '../../auth/services/auth_service.dart';
 import '../../home/viewmodels/home_view_model.dart';
 import '../../home/views/location_picker.dart';
 import '../viewmodels/profile_view_model.dart';
@@ -21,7 +21,7 @@ class MyPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ProfileViewModel(MockApiService.instance),
+      create: (_) => ProfileViewModel(AuthService()),
       child: const _MyPageContent(),
     );
   }

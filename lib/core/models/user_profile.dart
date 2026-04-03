@@ -34,6 +34,13 @@ class TimeSlot {
 
   const TimeSlot({required this.weekday, required this.hourIndex});
 
+  Map<String, dynamic> toJson() => {'weekday': weekday, 'hourIndex': hourIndex};
+
+  factory TimeSlot.fromJson(Map<String, dynamic> json) => TimeSlot(
+    weekday: json['weekday'] as int,
+    hourIndex: json['hourIndex'] as int,
+  );
+
   static const List<String> _weekdayLabels = [
     'MON',
     'TUE',
@@ -133,9 +140,9 @@ class UserProfile {
       region: json['region'] as String? ?? '알 수 없음',
       profileImageUrl: json['profile_image_url'] as String? ?? '',
       isRandomModeEnabled: json['isRandomModeEnabled'] as bool? ?? false,
-      age: json['age'] as int?,
+      age: json['age'] is int ? json['age'] as int : int.tryParse(json['age']?.toString() ?? '') ?? 0,
       location: json['location'] as String?,
-      preferredSize: json['preferredSize'] as String?,
+      preferredSize: json['preferredSize'] as String? ?? 'any',
       interests:
           (json['interests'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -151,6 +158,12 @@ class UserProfile {
           ? json['onboarding_step'] as int
           : int.tryParse(json['onboarding_step']?.toString() ?? '') ?? 1,
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
+      locations: (json['locations'] as List<dynamic>?)
+          ?.map((e) => LocationModel.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      availableTimes: (json['available_times'] as List<dynamic>?)
+          ?.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -172,6 +185,8 @@ class UserProfile {
       'reputation_score': reputationScore,
       'onboarding_step': onboardingStep,
       'is_profile_completed': isProfileCompleted,
+      'locations': locations.map((e) => e.toJson()).toList(),
+      'available_times': availableTimes.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -188,7 +203,7 @@ class UserProfile {
   }
 
   static const _unset = Object();
-  static const unset = _unset; // public alias for MockApiService
+  static const unset = _unset; // public alias for services to handle null vs unset
 
   UserProfile copyWith({
     int? id,

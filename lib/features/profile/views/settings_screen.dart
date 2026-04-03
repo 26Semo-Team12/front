@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/profile_view_model.dart';
-import '../../../core/services/mock_api_service.dart';
+import '../../auth/services/auth_service.dart';
 import '../../../core/viewmodels/theme_view_model.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final themeVm = context.watch<ThemeViewModel>();
 
     return ChangeNotifierProvider(
-      create: (_) => ProfileViewModel(MockApiService.instance),
+      create: (_) => ProfileViewModel(AuthService()),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('설정', style: TextStyle(fontWeight: FontWeight.bold)),
