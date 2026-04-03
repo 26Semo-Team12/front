@@ -62,6 +62,12 @@ class AuthService {
     await prefs.remove('access_token');
   }
   
+  /// 랜덤 모드 토글 (matching_mode = RANDOM | INTEREST)
+  Future<UserProfile> toggleRandomMode(bool enabled) async {
+    final res = await _apiClient.patch('/auth/me/random-mode', body: {'enabled': enabled});
+    return UserProfile.fromJson(res['data']);
+  }
+
   /// 현재 로그인 되어있는지 토큰 유무로 검사
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();

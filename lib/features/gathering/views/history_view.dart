@@ -93,7 +93,7 @@ class HistoryView extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => EvaluationScreen(
-                    gatheringId: inv.id,
+                    gatheringId: int.tryParse(inv.id) ?? 0,
                     participants: mockParticipants,
                     currentUserId: 1,
                   ),

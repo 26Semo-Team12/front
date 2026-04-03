@@ -4,25 +4,44 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/chat_message.dart';
 import '../viewmodels/chat_view_model.dart';
+import '../../../core/network/api_client.dart';
 import 'widgets/ladder_game_dialog.dart';
 
 class ChatScreen extends StatelessWidget {
+  final int? roomId;
+  final int? gatheringId;
   final String gatheringTitle;
 
-  const ChatScreen({super.key, required this.gatheringTitle});
+  const ChatScreen({
+    super.key, 
+    this.roomId,
+    this.gatheringId,
+    required this.gatheringTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => ChatViewModel(),
-      child: _ChatScreenContent(gatheringTitle: gatheringTitle),
+      child: _ChatScreenContent(
+        roomId: roomId,
+        gatheringId: gatheringId,
+        gatheringTitle: gatheringTitle,
+      ),
     );
   }
 }
 
 class _ChatScreenContent extends StatefulWidget {
+  final int? roomId;
+  final int? gatheringId;
   final String gatheringTitle;
-  const _ChatScreenContent({required this.gatheringTitle});
+  
+  const _ChatScreenContent({
+    this.roomId,
+    this.gatheringId,
+    required this.gatheringTitle,
+  });
 
   @override
   State<_ChatScreenContent> createState() => _ChatScreenContentState();
@@ -32,7 +51,35 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
   final TextEditingController _textController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeChat();
+    });
+  }
+
+  Future<void> _initializeChat() async {
+    final viewModel = context.read<ChatViewModel>();
+    
+    // 1. Get current userId (Mock for now, should come from AuthService/ApiClient)
+    // Actually, I'll just use a fixed ID for testing if I can't find it easily.
+    // In a real app, we'd get this from the session.
+    final userIdRes = await ApiClient().get('/auth/me');
+    final userId = userIdRes['data']['id'] as int;
+
+    viewModel.initSocket(userId);
+
+    if (widget.roomId != null) {
+      viewModel.joinRoom(widget.roomId!);
+    } else if (widget.gatheringId != null) {
+      final room = await viewModel.openGatheringRoom(widget.gatheringId!);
+      viewModel.joinRoom(room.id);
+    }
+  }
+
+  @override
   void dispose() {
+    context.read<ChatViewModel>().leaveRoom();
     _textController.dispose();
     super.dispose();
   }
@@ -291,7 +338,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null && mounted) {
       final viewModel = context.read<ChatViewModel>();
-      viewModel.sendMessage('[사진 전송됨: ${pickedFile.name}]', type: ChatMessageType.system, isMe: true);
+      viewModel.sendMessage('[사진 전송됨: ${pickedFile.name}]');
     }
   }
 
@@ -301,7 +348,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
     if (pickedFile != null && mounted) {
       final viewModel = context.read<ChatViewModel>();
-      viewModel.sendMessage('[동영상 전송됨: ${pickedFile.name}]', type: ChatMessageType.system, isMe: true);
+      viewModel.sendMessage('[동영상 전송됨: ${pickedFile.name}]');
     }
   }
 
@@ -310,7 +357,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null && mounted) {
       final viewModel = context.read<ChatViewModel>();
-      viewModel.sendMessage('[파일 전송됨: ${result.files.single.name}]', type: ChatMessageType.system, isMe: true);
+      viewModel.sendMessage('[파일 전송됨: ${result.files.single.name}]');
     }
   }
 
@@ -335,7 +382,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
         final h = time.hour.toString().padLeft(2, '0');
         final min = time.minute.toString().padLeft(2, '0');
         
-        viewModel.sendMessage('📅 새로운 일정이 제안되었습니다: $y년 $m월 $d일 $h:$min', type: ChatMessageType.system, isMe: false);
+        viewModel.sendMessage('📅 새로운 일정이 제안되었습니다: $y년 $m월 $d일 $h:$min');
         // TODO: 일정 생성/투표 화면으로 네비게이션 트리거 연동 필요
       }
     }
@@ -349,7 +396,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
         return LadderGameDialog(
           onResultSelected: (resultString) {
             final viewModel = context.read<ChatViewModel>();
-            viewModel.sendMessage(resultString, type: ChatMessageType.aiIcebreaking, isMe: false);
+            viewModel.sendMessage(resultString);
           },
         );
       },

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../viewmodels/gathering_detail_view_model.dart';
 import '../../chat/views/chat_screen.dart';
-import '../models/schedule.dart';
+import '../models/schedule_option.dart';
 
 class RegularView extends StatelessWidget {
   const RegularView({super.key});
@@ -164,13 +164,13 @@ class RegularView extends StatelessWidget {
                   const SizedBox(height: 12),
                   
                   // Render Schedules
-                  if (viewModel.sortedSchedules.isEmpty)
+                  if (viewModel.sortedScheduleOptions.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(bottom: 24),
                       child: Text('새로운 일정을 만들어보세요.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                     )
                   else
-                    ...viewModel.sortedSchedules.map((s) => _buildScheduleCard(context, viewModel, s)),
+                    ...viewModel.sortedScheduleOptions.map((s) => _buildScheduleCard(context, viewModel, s)),
                   
                   const SizedBox(height: 32),
 
@@ -186,7 +186,12 @@ class RegularView extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => ChatScreen(gatheringTitle: inv.title)),
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(
+                            gatheringId: int.tryParse(inv.id),
+                            gatheringTitle: inv.title,
+                          ),
+                        ),
                       );
                     },
                     child: Container(
@@ -240,13 +245,13 @@ class RegularView extends StatelessWidget {
     );
   }
 
-  Widget _buildScheduleCard(BuildContext context, GatheringDetailViewModel viewModel, GatheringSchedule schedule) {
+  Widget _buildScheduleCard(BuildContext context, GatheringDetailViewModel viewModel, ScheduleOption schedule) {
     // Format Date securely (Mock)
-    final y = schedule.dateTime.year;
-    final m = schedule.dateTime.month.toString().padLeft(2, '0');
-    final d = schedule.dateTime.day.toString().padLeft(2, '0');
-    final h = schedule.dateTime.hour.toString().padLeft(2, '0');
-    final min = schedule.dateTime.minute.toString().padLeft(2, '0');
+    final y = schedule.startAt.year;
+    final m = schedule.startAt.month.toString().padLeft(2, '0');
+    final d = schedule.startAt.day.toString().padLeft(2, '0');
+    final h = schedule.startAt.hour.toString().padLeft(2, '0');
+    final min = schedule.startAt.minute.toString().padLeft(2, '0');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -270,8 +275,11 @@ class RegularView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('$y.$m.$d $h:$min', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 4),
-                    Text('장소: ${schedule.location}', style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+                    if (schedule.isSelected)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text('확정된 일정', style: TextStyle(color: Color(0xFFD6706D), fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
                   ],
                 ),
               ),
@@ -283,42 +291,64 @@ class RegularView extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => viewModel.voteSchedule(schedule.id, true),
+                  onTap: () => viewModel.voteSchedule(schedule.id, VoteStatus.AVAILABLE),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: schedule.isAttending == true ? const Color(0xFFD6706D) : Colors.grey.shade100,
+                      color: schedule.myVote == VoteStatus.AVAILABLE ? const Color(0xFFD6706D) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: schedule.isAttending == true ? const Color(0xFFD6706D) : Colors.grey.shade300),
+                      border: Border.all(color: schedule.myVote == VoteStatus.AVAILABLE ? const Color(0xFFD6706D) : Colors.grey.shade300),
                     ),
                     child: Text(
-                      '참여 (O)',
+                      '참여 (${schedule.availableCount})',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: schedule.isAttending == true ? Colors.white : Colors.black87,
+                        color: schedule.myVote == VoteStatus.AVAILABLE ? Colors.white : Colors.black87,
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => viewModel.voteSchedule(schedule.id, false),
+                  onTap: () => viewModel.voteSchedule(schedule.id, VoteStatus.MAYBE),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: schedule.isAttending == false ? const Color(0xFFD6706D) : Colors.grey.shade100,
+                      color: schedule.myVote == VoteStatus.MAYBE ? Colors.orange : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: schedule.isAttending == false ? const Color(0xFFD6706D) : Colors.grey.shade300),
+                      border: Border.all(color: schedule.myVote == VoteStatus.MAYBE ? Colors.orange : Colors.grey.shade300),
                     ),
                     child: Text(
-                      '불참 (X)',
+                      '미정 (${schedule.maybeCount})',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: schedule.isAttending == false ? Colors.white : Colors.black87,
+                        color: schedule.myVote == VoteStatus.MAYBE ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => viewModel.voteSchedule(schedule.id, VoteStatus.UNAVAILABLE),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: schedule.myVote == VoteStatus.UNAVAILABLE ? Colors.grey : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: schedule.myVote == VoteStatus.UNAVAILABLE ? Colors.grey : Colors.grey.shade300),
+                    ),
+                    child: Text(
+                      '불참 (${schedule.unavailableCount})',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: schedule.myVote == VoteStatus.UNAVAILABLE ? Colors.white : Colors.black87,
                       ),
                     ),
                   ),
@@ -326,6 +356,19 @@ class RegularView extends StatelessWidget {
               ),
             ],
           ),
+          if (!schedule.isSelected)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: ElevatedButton(
+                onPressed: () => viewModel.finalizeSchedule(schedule.id),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 36),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('이 일정으로 확정하기', style: TextStyle(color: Colors.white, fontSize: 12)),
+              ),
+            ),
         ],
       ),
     );
@@ -367,7 +410,6 @@ class RegularView extends StatelessWidget {
   }
 
   void _showScheduleCreateSheet(BuildContext context, GatheringDetailViewModel viewModel) {
-    final locCtrl = TextEditingController();
     DateTime selectedDate = DateTime.now();
     TimeOfDay selectedTime = TimeOfDay.now();
 
@@ -390,15 +432,6 @@ class RegularView extends StatelessWidget {
                   children: [
                     const Text('일정 생성', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 20),
-                    TextField(
-                      controller: locCtrl,
-                      decoration: InputDecoration(
-                        labelText: '만날 장소',
-                        hintText: '예: 강남역 11번 출구',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
@@ -452,10 +485,6 @@ class RegularView extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {
-                        if (locCtrl.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('장소를 입력해주세요.')));
-                          return;
-                        }
                         final dt = DateTime(
                           selectedDate.year,
                           selectedDate.month,
@@ -463,7 +492,7 @@ class RegularView extends StatelessWidget {
                           selectedTime.hour,
                           selectedTime.minute,
                         );
-                        viewModel.addSchedule(locCtrl.text.trim(), dt);
+                        viewModel.addSchedule(dt);
                         Navigator.pop(context);
                       },
                       child: const Text('일정 만들기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),

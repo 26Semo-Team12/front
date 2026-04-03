@@ -138,4 +138,21 @@ class ProfileViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> toggleRandomMode(bool enabled) async {
+    if (_currentUser == null) return;
+    
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      _currentUser = await _authService.toggleRandomMode(enabled);
+    } catch (e) {
+      debugPrint('Random mode toggle failed: $e');
+      // 에러 발생 시 UI 상태 복구를 위해 그대로 둠 (또는 스낵바 알림)
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

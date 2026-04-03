@@ -5,7 +5,7 @@ import '../models/evaluation.dart';
 import '../viewmodels/evaluation_view_model.dart';
 
 class EvaluationScreen extends StatelessWidget {
-  final String gatheringId;
+  final int gatheringId;
   final List<UserProfile> participants;
   final int currentUserId;
 

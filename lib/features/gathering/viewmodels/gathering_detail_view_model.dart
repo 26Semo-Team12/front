@@ -1,29 +1,58 @@
 import 'package:flutter/material.dart';
 import '../../home/models/invitation.dart';
-import '../models/schedule.dart';
+import '../models/gathering.dart';
+import '../models/schedule_option.dart';
+import '../services/gathering_service.dart';
+import '../services/schedule_service.dart';
 
 class GatheringDetailViewModel extends ChangeNotifier {
+  final GatheringService _gatheringService = GatheringService();
+  final ScheduleService _scheduleService = ScheduleService();
+
   Invitation _invitation;
+  Gathering? _gathering;
   final void Function(String id, String? newTitle, String? newImageUrl) onUpdateGlobalMeta;
 
   Invitation get invitation => _invitation;
+  Gathering? get gathering => _gathering;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  final List<GatheringSchedule> _schedules = [];
+  List<ScheduleOption> _scheduleOptions = [];
+  List<ScheduleOption> get scheduleOptions => _scheduleOptions;
 
-  List<GatheringSchedule> get sortedSchedules {
-    final list = List<GatheringSchedule>.from(_schedules);
-    // Sort by chronological order, earliest first
-    list.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+  int? get gatheringId => int.tryParse(_invitation.id);
+
+  List<ScheduleOption> get sortedScheduleOptions {
+    final list = List<ScheduleOption>.from(_scheduleOptions);
+    list.sort((a, b) => a.startAt.compareTo(b.startAt));
     return list;
   }
 
   GatheringDetailViewModel({
     required Invitation initialInvitation,
     required this.onUpdateGlobalMeta,
-  }) : _invitation = initialInvitation;
+  }) : _invitation = initialInvitation {
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    if (gatheringId == null) return;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _gathering = await _gatheringService.getGatheringDetail(gatheringId!);
+      final options = await _scheduleService.getScheduleOptions(gatheringId!);
+      _scheduleOptions = options.map((e) => ScheduleOption.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint('Failed to load gathering data: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   void updateTitle(String newTitle) {
     _invitation = _invitation.copyWith(title: newTitle);
@@ -37,25 +66,49 @@ class GatheringDetailViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addSchedule(String location, DateTime dateTime) {
-    final newSchedule = GatheringSchedule(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      location: location,
-      dateTime: dateTime,
-    );
-    _schedules.add(newSchedule);
+  Future<void> addSchedule(DateTime dateTime) async {
+    if (gatheringId == null) return;
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      await _scheduleService.createScheduleOption(gatheringId!, dateTime);
+      await loadData(); // Refresh list
+    } catch (e) {
+      debugPrint('Failed to add schedule: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void voteSchedule(String id, bool attend) {
-    final index = _schedules.indexWhere((s) => s.id == id);
-    if (index != -1) {
-      // Toggle if already selected, or switch
-      if (_schedules[index].isAttending == attend) {
-        _schedules[index] = _schedules[index].copyWith(isAttending: null);
-      } else {
-        _schedules[index] = _schedules[index].copyWith(isAttending: attend);
-      }
+  Future<void> voteSchedule(int optionId, VoteStatus status) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _scheduleService.voteScheduleOption(optionId, status.value);
+      await loadData(); // Refresh list
+    } catch (e) {
+      debugPrint('Failed to vote schedule: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> finalizeSchedule(int optionId) async {
+    if (gatheringId == null) return;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _scheduleService.finalizeSchedule(gatheringId!, optionId);
+      await loadData();
+    } catch (e) {
+      debugPrint('Failed to finalize schedule: $e');
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }

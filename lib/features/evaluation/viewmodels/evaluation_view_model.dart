@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/user_profile.dart';
 import '../models/evaluation.dart';
+import '../services/evaluation_service.dart';
 
 class EvaluationViewModel extends ChangeNotifier {
-  final String gatheringId;
+  final int gatheringId;
   final List<UserProfile> participants;
   final int currentUserId;
+
+  final EvaluationService _evaluationService = EvaluationService();
 
   List<UserProfile> _evaluatees = [];
   List<UserProfile> get evaluatees => _evaluatees;
@@ -97,21 +100,32 @@ class EvaluationViewModel extends ChangeNotifier {
     _isSubmitting = true;
     notifyListeners();
     
-    // Mock API Delay
-    await Future.delayed(const Duration(milliseconds: 600));
-    
-    _completedEvaluationIds.add(_activeEvaluateeId!);
-    _isSubmitting = false;
-
-    if (allEvaluationsCompleted) {
-      notifyListeners();
-      onAllCompleted();
-    } else {
-      // Find next uncompleted evaluatee
-      final nextEvaluatee = _evaluatees.firstWhere(
-        (p) => !_completedEvaluationIds.contains(p.id),
+    try {
+      await _evaluationService.submitEvaluation(
+        gatheringId: gatheringId,
+        evaluateeId: _activeEvaluateeId!,
+        positiveTags: _positiveTags[_activeEvaluateeId]!,
+        negativeTags: _negativeTags[_activeEvaluateeId]!,
+        comment: _comments[_activeEvaluateeId],
       );
-      _activeEvaluateeId = nextEvaluatee.id;
+      
+      _completedEvaluationIds.add(_activeEvaluateeId!);
+      
+      if (allEvaluationsCompleted) {
+        onAllCompleted();
+      } else {
+        // Find next uncompleted evaluatee
+        final nextEvaluatee = _evaluatees.firstWhere(
+          (p) => !_completedEvaluationIds.contains(p.id),
+        );
+        _activeEvaluateeId = nextEvaluatee.id;
+      }
+    } catch (e) {
+      debugPrint('Failed to submit evaluation: $e');
+      // For now, still mark as completed in UI if it fails? 
+      // Or show error snackbar. Let's just catch and keep state for now.
+    } finally {
+      _isSubmitting = false;
       notifyListeners();
     }
   }
