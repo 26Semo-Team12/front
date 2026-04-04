@@ -78,7 +78,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       Icon(Icons.smart_toy_outlined, color: Colors.white, size: 26),
                       SizedBox(width: 12),
                       Text(
-                        'AI MC 시작하기',
+                        'Venture AI 시작하기',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -98,7 +98,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         backgroundColor: _showAiMcButton
             ? const Color(0xFF7B68EE)
             : Colors.grey.shade400,
-        tooltip: 'AI MC 버튼 토글 (디버그)',
+        tooltip: 'Venture AI 버튼 토글 (디버그)',
         onPressed: () {
           setState(() => _showAiMcButton = !_showAiMcButton);
           context.read<NotificationViewModel>().simulateNotification();

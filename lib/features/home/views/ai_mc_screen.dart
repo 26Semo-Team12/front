@@ -218,10 +218,10 @@ function stopSession() {
       _startWaves();
     } else if (message.startsWith('error:')) {
       final detail = message.substring(6);
-      debugPrint('[AI MC] error: $detail');
+      debugPrint('[Venture AI] error: $detail');
       setState(() {
         _state = _McState.error;
-        _errorMessage = 'AI MC 연결에 실패했습니다.\n($detail)';
+        _errorMessage = 'Venture AI 연결에 실패했습니다.\n($detail)';
       });
     } else if (message == 'speaking:true') {
       if (_state == _McState.connected) {
@@ -235,7 +235,7 @@ function stopSession() {
     } else if (message.startsWith('ice:') ||
         message.startsWith('conn:') ||
         message.startsWith('debug:')) {
-      debugPrint('[AI MC] $message');
+      debugPrint('[Venture AI] $message');
       setState(() {
         _debugInfo = message.length > 80 ? message.substring(0, 80) : message;
       });
@@ -304,7 +304,7 @@ function stopSession() {
             if (mounted) Navigator.of(context).pop();
           },
         ),
-        title: const Text('AI MC', style: TextStyle(color: Colors.white70)),
+        title: const Text('Venture AI', style: TextStyle(color: Colors.white70)),
       ),
       body: Stack(
         children: [
@@ -338,7 +338,7 @@ function stopSession() {
         CircularProgressIndicator(color: Color(0xFF7B68EE)),
         SizedBox(height: 24),
         Text(
-          'AI MC 연결 중...',
+          'Venture AI 연결 중...',
           style: TextStyle(color: Colors.white70, fontSize: 16),
         ),
       ],
@@ -418,7 +418,7 @@ function stopSession() {
             _recording
                 ? '듣고 있습니다... 버튼을 눌러 전송'
                 : _speaking
-                    ? 'AI MC가 말하고 있습니다...'
+                    ? 'Venture AI가 말하고 있습니다...'
                     : '아래 버튼을 눌러 말해보세요',
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
